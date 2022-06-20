@@ -1,0 +1,148 @@
+@font-face {
+  font-family: iran-sans;
+  src: url(../fonts/IRANSansFaNum.eot);
+  src: url(../fonts/IRANSansFaNum.ttf);
+  src: url(../fonts/IRANSansFaNum.woff);
+  src: url(../fonts/IRANSansFaNum.woff2);
+}
+
+body{
+  font-family: iran-sans;
+}
+
+.top
+{
+    background-color: #008080;
+
+}
+.logo
+{
+ color: #fff;   
+   
+}
+.date
+{
+ text-align: center;  
+ color: #fff; 
+ padding-top: 15px;
+}
+.search
+{
+    padding-top: 10px; 
+    padding-bottom: 10px;
+       
+   
+}
+
+.search input
+{
+  padding-bottom: 6px;
+    padding-top: 6px;
+    border-radius: 5px;
+    border-color: #f8fafc;
+    outline: none;
+}
+
+.menu
+{
+    background-color: #222;
+    
+}
+.slider
+{
+    background-color: #dadada;
+    
+}
+.content
+{
+    background-color: #fff;
+    
+}
+.footer
+{
+    background-color: #fff;
+    
+}
+.banner
+{
+    background-color: #008080;
+    border-radius: 5px;
+    color: #fff;
+    text-align: center;
+    padding: 5px 0px;
+}
+.box
+{
+    height: 400px;
+    background-color: #dadada;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 2% 0px;
+}
+hr
+{
+border: 2px solid #fff;
+}
+.social
+{ 
+  background-color: #008080;
+  height:300px;
+  color:floralwhite;
+  text-align: center;
+  font-size: 20px;
+  padding: 30px;
+  margin: 5px  0px;
+  border-radius: 5px;
+}
+.social img
+{
+   padding-right: 4%;
+   padding-top: 4%;  
+   transition: width 0.5s, height 0.5s, transform 0.5s;
+   border-radius: 5px;
+}
+.social img:hover
+{
+  width:80px;
+  height: 80px;
+  transform: rotate(360deg);
+}
+.otherlink
+ {
+   background-color: #008080;
+   padding: 20px 0px ;
+   text-align: center;
+   color:#dadada;
+   height:300px;
+   margin: 5px  0px;
+   border-radius: 5px;
+ }
+ .otherlink a
+ {
+  display: block;
+  text-decoration: none;
+  color: #dadada;
+ }
+ .otherlink p
+ {
+   padding: 15px 0px;
+ }
+ .otherlink a :hover
+ {
+   background-color: red;
+ }
+ .newsletter
+ { 
+   height:300px;
+   text-align: center;
+   color: floralwhite;
+   font-size: 25px;
+   background-color: #008080;
+   padding: 40px 0px ;
+   color:#dadada;
+   margin: 5px  0px;
+   border-radius: 5px;
+ }
+ li a:hover, .dropdown:hover .dropbtn {
+  background-color: red;
+}
