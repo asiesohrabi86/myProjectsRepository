@@ -2,6 +2,8 @@
 
 // use App\Http\Controllers\Admin\CommentController as AdminCommentController;
 
+use App\Http\Controllers\Aamin\AttributeController as AaminAttributeController;
+use App\Http\Controllers\Admin\AttributeController;
 use App\Http\Controllers\Admin\CategoryController;
 use App\Http\Controllers\Admin\CommentController as AdminCommentController;
 use App\Http\Controllers\Admin\HomeController;
@@ -71,8 +73,21 @@ Route::prefix('/dashboard')->group(function(){
    Route::resource('/products',ProductController::class);
    Route::resource('/comments',AdminCommentController::class);
    Route::get('/comments-unapproved',[AdminCommentController::class,'unapprovedGet'])->name('unapproved.get');
+
    Route::patch('/comments-unapproved/{comment}',[AdminCommentController::class,'unapprovedPost'])->name('unapproved.post');
+
    Route::resource('/categories',CategoryController::class);
+   Route::resource('/attributes',AttributeController::class);
+   Route::get('/attributes/values/{attribute}' , [AttributeController::class , 'getValues'])->name('attribute.get.values');
+
+   Route::post('/attributes/values/{attribute}' , [AttributeController::class , 'postValues'])->name('attribute.post.values');
+
+   Route::get('/attributes/values/edit/{attributeValue}' ,  [AttributeController::class,'editValues'])->name('attribute.edit.values');
+
+   Route::patch('/attributes/values/edit/{attributeValue}',[AttributeController::class,'updateValues'])->name('attribute.update.values');
+
+   Route::delete('/attributes/values/delete/{attributeValue}',[AttributeController::class,'destroyValues'])->name('attribute.destroy.values');
+
 });
 
 

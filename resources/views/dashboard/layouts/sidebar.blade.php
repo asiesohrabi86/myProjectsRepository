@@ -41,6 +41,13 @@
                         <li><a href="{{route('unapproved.get')}}" style="{{request()->is('dashboard/comments-unapproved') ? 'color:blue' : ''}}">نظرات تاییدنشده</a></li>
                     </ul>
                 </li>
+                <li class="treeview @php if(request()->is('dashboard/attributes') || request()->is('dashboard/attributes/create')) {echo 'active';} @endphp ">
+                    <a href="javascript:void(0)"><i class="zmdi zmdi-account"></i> <span>مدیریت ویژگی ها</span> <i class="fa fa-angle-left"></i></a>
+                    <ul class="treeview-menu">
+                        <li><a href="{{route('attributes.index')}}" style="{{request()->is('dashboard/attributes') ? 'color:blue' : ''}}">لیست ویژگی ها</a></li>
+                        <li><a href="{{route('unapproved.get')}}" style="{{request()->is('dashboard/attributes-unapproved') ? 'color:blue' : ''}}">ویژگی ها تاییدنشده</a></li>
+                    </ul>
+                </li>
                 <li class="treeview">
                     <a href="javascript:void(0)"><i class="zmdi zmdi-email"></i> <span>پست الکترونیک</span> <i class="fa fa-angle-left"></i></a>
                     <ul class="treeview-menu">
