@@ -3,6 +3,10 @@ window._ = require('lodash');
 // Require Sweet Alert
 require("sweetalert");
 
+// Import jQuery and Select2 globally
+// window.$ = window.jQuery = require('jquery');
+// require('select2');
+
 try {
     require('bootstrap');
 } catch (e) {}

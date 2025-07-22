@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Models\Permission;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -16,7 +18,12 @@ class UserController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function __construct()
+    {
+        $this->middleware('can:users,user')->only('index');
+    }
+   
+     public function index()
     {
         $users = User::all();
         return view('dashboard.users.all',compact('users'));
@@ -119,5 +126,19 @@ class UserController extends Controller
     {
         $user->delete();
         return back();
+    }
+
+    public function addRole(User $user)
+    {
+        $permissions = Permission::all();
+        $roles = Role::all();
+        return view('dashboard.users.roles',compact(['roles','user','permissions']));
+    }
+
+    public function updateRole(User $user,Request $request)
+    {
+        $user->roles()->sync($request->input('roles', [])); // حذف رول‌های قبلی و ست کردن جدیدها
+        $user->permissions()->sync($request->input('permissions', []));
+        return redirect()->route('users.index')->with('success', 'نقش‌های کاربر با موفقیت به‌روزرسانی شد.');
     }
 }

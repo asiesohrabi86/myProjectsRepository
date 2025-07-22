@@ -22,17 +22,19 @@
                             @endif
                             <div class="form-group">
                                 <label for="exampleInputEmail111">نام دسته بندی</label>
-                                <input type="text" class="form-control" id="exampleInputEmail111" value="{{old('name')}}" name="name">
+                                <input type="text" class="form-control" id="exampleInputEmail111" name="name">
                             </div>
-                            {{-- <div class="form-group">
-                                <label for="exampleInputPassword11">دسته پدر </label>
-                                <select name="parent" multiple>
-                                    <option value="0">ندارد</option>
-                                    @foreach (\Category::where('parent',0)->all() as $parent)
-                                        <option value="{{$parent->id}}" {{$category->parent==$parent->id ? 'selected' : ''}}>{{$parent->name}}</option>
+                            <div class="form-group">
+                                <label for="parent_id">دسته پدر</label>
+                                <select name="parent_id" id="parent_id">
+                                    <option value="{{old('name')}}">ندارد</option>
+                                    @foreach ($parentCategories as $parent)
+                                        <option value="{{ $parent->id }}">
+                                            {{ $parent->name }}
+                                        </option>
                                     @endforeach
                                 </select>
-                            </div> --}}
+                            </div>
                             
                             <button type="submit" class="btn btn-primary mr-2">ثبت دسته بندی</button>
                             <button type="submit" class="btn btn-default">لغو</button>

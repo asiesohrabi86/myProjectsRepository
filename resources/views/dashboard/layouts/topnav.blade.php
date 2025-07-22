@@ -16,7 +16,7 @@
         </div>
     </div>
 
-    <!-- Left Side Nav -->
+     <!-- Left Side Nav  -->
     <ul class="left-side-navbar d-flex align-items-center">
         <li class="hide-phone app-search">
             <form class="input-group" role="search">

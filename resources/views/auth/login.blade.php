@@ -2,6 +2,55 @@
 @section('title','ورود به سیستم')
 @section('script')
 <script src="https://www.google.com/recaptcha/api.js?hl=fa" async defer></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form[action="{{route('login')}}"]');
+    const inputs = form.querySelectorAll('input[type="email"], input[type="password"]');
+
+    function validateInput(input) {
+        let pattern = null;
+        switch(input.name) {
+            case 'email':
+                pattern = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+                break;
+            case 'password':
+                pattern = /^(?=.*[a-zA-Z])(?=.*\d).{8,}$/;
+                break;
+            default:
+                pattern = /.*/;
+        }
+        if(pattern && !pattern.test(input.value)) {
+            input.nextElementSibling.classList.remove('d-none');
+            input.nextElementSibling.classList.add('d-block');
+            input.classList.add('is-invalid');
+            return false;
+        } else {
+            input.nextElementSibling.classList.remove('d-block');
+            input.nextElementSibling.classList.add('d-none');
+            input.classList.remove('is-invalid');
+            return true;
+        }
+    }
+
+    inputs.forEach(function(input) {
+        input.addEventListener('input', function() {
+            validateInput(input);
+        });
+    });
+
+    form.addEventListener('submit', function(e) {
+        let valid = true;
+        inputs.forEach(function(input) {
+            if(!validateInput(input)) {
+                valid = false;
+            }
+        });
+        if(!valid) {
+            e.preventDefault();
+        }
+    });
+});
+</script>
 @endsection
 @section('content')
 
@@ -31,7 +80,7 @@
                     <div class="form-group">
                         <label class="float-left" for="emailaddress">پست الکترونیکی</label>
                         <input id="email" type="email" class="form-control @error('email') is-invalid @enderror" name="email" value="{{ old('email') }}" required autocomplete="email" autofocus>
-
+                        <span class="invalid-feedback d-none">ایمیل وارد شده معتبر نیست.</span>
                         @error('email')
                             <span class="invalid-feedback" role="alert">
                                 <strong>{{ $message }}</strong>
@@ -43,7 +92,7 @@
                         <a href="forget-password.html" class="text-dark float-right"></a>
                         <label class="float-left" for="password">رمز عبور</label>
                         <input id="password" type="password" class="form-control @error('password') is-invalid @enderror" name="password" required autocomplete="current-password">
-
+                        <span class="invalid-feedback d-none">رمز عبور باید حداقل ۸ کاراکتر و شامل حروف و عدد باشد.</span>
                         @error('password')
                             <span class="invalid-feedback" role="alert">
                                 <strong>{{ $message }}</strong>

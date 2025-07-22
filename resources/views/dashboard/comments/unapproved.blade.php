@@ -22,6 +22,7 @@
                                         <th>مربوط به</th>
                                         <th>نام نظردهنده</th>
                                         <th>متن نظر</th>
+                                        <th>نظر والد</th>
                                         <th>وضعیت</th>
                                         <th>عملیات</th>
                                     </tr>
@@ -29,39 +30,41 @@
 
                                 <tbody>
                                     @foreach ($comments as $comment)
-                                    <tr>
-                                        <td>{{$comment->id}}</td>
-                                        <td>
-                                            @if ($comment->commentable_type == 'App\Models\Product')
-                                                محصولات
-                                            @endif
-                                        </td>
-                                        <td>{{$comment->user->name}}</td>
-                                        <td>{{$comment->text}}</td>
-                                        <td>
-                                           @if ($comment->approved)
-                                               <span class="badge badge-success">تاییدشده</span>
-                                            @else
-                                                <span class="badge badge-danger">تاییدنشده</span>
-                                           @endif 
-                                        </td> 
-
-                                        <td class="row"> 
-                                            <form action="{{route('unapproved.post',$comment->id)}}" method="POST">
-                                                @csrf
-                                                @method('patch')
-                                                <button type="submit" class="btn btn-success btn-sm">تایید</button>
-                                            </form>
-                                            <form action="{{route('comments.destroy',$comment->id)}}" method="POST">
-                                                @csrf
-                                                @method('delete')
-                                                <button type="submit" onclick="return confirm('آیا از حذف نظر مطمئن هستید؟')" class="btn btn-danger btn-sm">حذف</button>
-                                            </form>
-                                        
-                                        </td>
-                                    </tr>  
+                                        <tr>
+                                            <td>{{ $comment->id }}</td>
+                                            <td>
+                                                @if ($comment->commentable_type == 'App\\Models\\Product' && $comment->commentable)
+                                                    {{ $comment->commentable->title }}
+                                                @endif
+                                            </td>
+                                            <td>{{ $comment->user->name }}</td>
+                                            <td>{{ $comment->text }}</td>
+                                            <td>
+                                                @if ($comment->parent)
+                                                    {{ Str::limit($comment->parent->text, 30) }}
+                                                @endif
+                                            </td>
+                                            <td>
+                                                @if ($comment->approved)
+                                                    <span class="badge badge-success">تاییدشده</span>
+                                                @else
+                                                    <span class="badge badge-danger">تاییدنشده</span>
+                                                @endif
+                                            </td>
+                                            <td class="row">
+                                                <form action="{{ route('unapproved.post', $comment->id) }}" method="POST">
+                                                    @csrf
+                                                    @method('patch')
+                                                    <button type="submit" class="btn btn-success btn-sm">تایید</button>
+                                                </form>
+                                                <form action="{{ route('comments.destroy', $comment->id) }}" method="POST">
+                                                    @csrf
+                                                    @method('delete')
+                                                    <button type="submit" onclick="return confirm('آیا از حذف نظر مطمئن هستید؟')" class="btn btn-danger btn-sm">حذف</button>
+                                                </form>
+                                            </td>
+                                        </tr>
                                     @endforeach
-                                    
                                 </tbody>
                             </table>
 

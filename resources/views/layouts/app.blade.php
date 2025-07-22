@@ -10,9 +10,9 @@
     <title>@yield('title','page-title')</title>
 
     <!-- Favicon -->
-    <link rel="icon" href="/admin/img/core-img/favicon.png">
+    <link rel="icon" href="{{asset('admin/img/core-img/favicon.png')}}">
 
-    <link rel="stylesheet" href="/admin/style.css">
+    <link rel="stylesheet" href="{{asset('admin/style.css')}}">
     <script src="{{asset('js/app.js')}}"></script>
 
 </head>
@@ -74,17 +74,17 @@
     ======================================= -->
 
     <!-- Must needed plugins to the run this Template -->
-    <script src="/admin/js/jquery.min.js"></script>
-    <script src="/admin/js/popper.min.js"></script>
-    <script src="/admin/js/bootstrap.min.js"></script>
-    <script src="/admin/js/bundle.js"></script>
+    <script src="{{asset('admin/js/jquery.min.js')}}"></script>
+    <script src="{{asset('admin/js/popper.min.js')}}"></script>
+    <script src="{{asset('admin/js/bootstrap.min.js')}}"></script>
+    <!-- <script src="{{asset('admin/js/bundle.js')}}"></script> -->
 
     {{-- Google Recaptcha --}}
     @yield('script')
-
+    @stack('script')
 
     <!-- Active JS -->
-    <script src="/admin/js/default-assets/active.js"></script>
+    <script src="{{asset('admin/js/default-assets/active.js')}}"></script>
     @include('sweet::alert')
 </body>
 

@@ -31,7 +31,7 @@ return [
     ],
     'boolean'              => 'فیلد :attribute فقط می‌تواند true و یا false باشد.',
     'confirmed'            => ':attribute با فیلد تکرار مطابقت ندارد.',
-    'current_password'     => 'رمزعبور اشتباه است.',
+    'current_password'     => 'رمز عبور فعلی اشتباه است.',
     'date'                 => ':attribute یک تاریخ معتبر نیست.',
     'date_equals'          => ':attribute باید یک تاریخ برابر با تاریخ :date باشد.',
     'date_format'          => ':attribute با الگوی :format مطابقت ندارد.',

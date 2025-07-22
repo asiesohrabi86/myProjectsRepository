@@ -1,28 +1,23 @@
 @extends('layouts.master')
-@section('title','')
+@section('title', $product->title)
 @section('content')
     <!-- main -->
     <main class="single-product default">
     <div class="container">
+        @if(session('success'))
+            <div class="alert alert-success text-center my-3">
+                {{ session('success') }}
+            </div>
+        @endif
         <div class="row">
             <div class="col-12">
                 <nav>
                     <ul class="breadcrumb">
-                        <li>
-                            <a href="#"><span>فروشگاه اینترنتی تاپ کالا</span></a>
-                        </li>
-                        <li>
-                            <a href="#"><span>کالای دیجیتال</span></a>
-                        </li>
-                        <li>
-                            <a href="#"><span>موبایل</span></a>
-                        </li>
-                        <li>
-                            <a href="#"><span>گوشی موبایل</span></a>
-                        </li>
-                        <li>
-                            <span>گوشی موبایل اپل مدل iPhone X ظرفیت 256 گیگابایت</span>
-                        </li>
+                        <li><a href="#"><span>فروشگاه</span></a></li>
+                        @foreach($product->categories as $category)
+                            <li><a href="#"><span>{{ $category->name }}</span></a></li>
+                        @endforeach
+                        <li><span>{{ $product->title }}</span></li>
                     </ul>
                 </nav>
             </div>
@@ -33,27 +28,16 @@
                     <div class="row">
                         <div class="col-lg-4 col-md-6 col-sm-12">
                             <div class="product-gallery default">
-                                <img class="zoom-img" id="img-product-zoom" src="assets/img/product/1335154.jpg" data-zoom-image="assets/img/product/13351544.jpg" width="411" />
+                                <img class="zoom-img" id="img-product-zoom" src="/{{ $product->image }}" data-zoom-image="/{{ $product->image }}" width="411" />
 
-                                <div id="gallery_01f" style="width:500px;float:left;">
+                                <!-- <div class="mb-1" id="gallery_01f" style="width:500px;float:left;">
                                     <ul class="gallery-items">
                                         <li>
-                                            <a href="#" class="elevatezoom-gallery active" data-update="" data-image="assets/img/product/2114766.jpg" data-zoom-image="assets/img/product/2114766.jpg">
-                                                <img src="/img/product/2114766.jpg" width="100" /></a>
-                                        </li>
-                                        <li>
-                                            <a href="#" class="elevatezoom-gallery" data-image="/img/product/3694075.jpg" data-zoom-image="/img/product/3694075.jpg"><img src="/img/product/3694075.jpg" width="100" /></a>
-                                        </li>
-                                        <li>
-                                            <a href="tester" class="elevatezoom-gallery" data-image="assets/img/product/1335154.jpg" data-zoom-image="assets/img/product/1335154.jpg">
-                                                <img src="/img/product/1335154.jpg" width="100" />
-                                            </a>
-                                        </li>
-                                        <li>
-                                            <a href="tester" class="elevatezoom-gallery" data-image="assets/img/product/110197298.jpg" data-zoom-image="assets/img/product/110197298.jpg" class="slide-content"><img src="/img/product/110197298.jpg" height="68" /></a>
+                                            <a href="#" class="elevatezoom-gallery active" data-update="" data-image="/{{ $product->image }}" data-zoom-image="/{{ $product->image }}">
+                                                <img src="/{{ $product->image }}" width="400px" /></a>
                                         </li>
                                     </ul>
-                                </div>
+                                </div> -->
                             </div>
                             <ul class="gallery-options">
                                 <li>
@@ -118,112 +102,103 @@
                         </div>
                         <div class="col-lg-4 col-md-6 col-sm-12">
                             <div class="product-title default">
-                                <h1>
-                                 {{$product->title}}
+                                <h1>{{ $product->title }}</h1>
                             </div>
                             <div class="product-directory default">
                                 <ul>
                                     <li>
                                         <span>برند</span> :
-                                        <span class="product-brand-title">متفرقه</span>
+                                        <span class="product-brand-title">{{ $product->brand ? $product->brand->name : '---' }}</span>
                                     </li>
                                     <li>
                                         <span>دسته‌بندی</span> :
-                                        <a href="#" class="btn-link-border">
-                                            ساعت هوشمند
-                                        </a>
+                                        @foreach($product->categories as $category)
+                                            <a href="#" class="btn-link-border">{{ $category->name }}</a>
+                                        @endforeach
                                     </li>
                                 </ul>
                             </div>
-                            <div class="product-variants default">
-                                <span>انتخاب رنگ: </span>
-                                <div class="radio">
-                                    <input type="radio" name="radio1" id="radio1" value="option1">
-                                    <label for="radio1">
-                                        خاکستری
-                                    </label>
+                            @php
+                                $basePrice = $product->price;
+                            @endphp
+                            <form id="add-to-cart-form" action="{{ route('cart.store') }}" method="POST">
+                                @csrf
+                                <input type="hidden" value="{{ $product->id }}" name="product_id">
+                                <input type="hidden" name="final_price" id="final-price-input" value="{{ $basePrice }}">
+                                <input type="hidden" name="color_id" id="color-id-input" value="">
+                                <input type="hidden" name="guarantee_id" id="guarantee-id-input" value="">
+                                <div class="product-variants default">
+                                    @if($product->colors->count())
+                                        <span>انتخاب رنگ: </span>
+                                        <div class="d-flex flex-wrap" id="color-select-group">
+                                            @foreach($product->colors as $color)
+                                                <label class="color-circle" data-color-id="{{$color->id}}" data-price-increase="{{$color->price_increase ?? 0}}" style="background:{{$color->color}}; margin-left:10px; margin-bottom:8px; cursor:pointer;"></label>
+                                            @endforeach
+                                        </div>
+                                        <input type="hidden" name="color_id" id="selected-color-id">
+                                    @endif
                                 </div>
-
-                                <div class="radio">
-                                    <input type="radio" name="radio1" id="radio2" value="option2" checked="">
-                                    <label for="radio2">
-                                        نقره ای
-                                    </label>
+                                <div class="product-guarantee default">
+                                    @if($product->guarantees->count())
+                                        <span>انتخاب گارانتی: </span>
+                                        @foreach($product->guarantees as $guarantee)
+                                            <div class="custom-radio-guarantee">
+                                                <input type="radio" name="guarantee_id" id="guarantee_{{$guarantee->id}}" value="{{$guarantee->id}}" data-price-increase="{{$guarantee->price_increase ?? 0}}">
+                                                <span class="radio-dot"></span>
+                                                <label for="guarantee_{{$guarantee->id}}" class="guarantee-label">{{ $guarantee->name }}</label>
+                                            </div>
+                                        @endforeach
+                                    @endif
                                 </div>
-
-                            </div>
-                            <div class="product-guarantee default">
-                                <i class="fa fa-check-circle"></i>
-                                <p class="product-guarantee-text">گارانتی اصالت و سلامت فیزیکی کالا</p>
-                            </div>
-                            <div class="product-delivery-seller default">
-                                <p>
-                                    <i class="now-ui-icons shopping_shop"></i>
-                                    <span>فروشنده:‌</span>
-                                    <a href="#" class="btn-link-border">ناسا</a>
-                                </p>
-                            </div>
-                            <div class="price-product defualt">
-                                <div class="price-value">
-                                    <span>{{$product->price}}</span>
-                                    <span class="price-currency">تومان</span>
+                                <div class="price-product defualt">
+                                    <div class="price-value">
+                                        <span id="final-price">{{ number_format($basePrice) }}</span>
+                                        <span class="price-currency">تومان</span>
+                                    </div>
                                 </div>
-                                <div class="price-discount" data-title="تخفیف">
-                                    <span>
-                                        ۰
-                                    </span>
-                                    <span>%</span>
+                                <div class="product-add default">
+                                    <div class="parent-btn">
+                                        <div class="form-group" style="display:inline-block; margin-left:10px;">
+                                            <label for="quantity">تعداد</label>
+                                            <input type="number" name="quantity" class="form-control" value="1" min="1" style="width:80px; display:inline-block;">
+                                        </div>
+                                        <button type="submit" class="dk-btn dk-btn-info" style="vertical-align:middle;">
+                                            <i class="now-ui-icons shopping_cart-simple" style="margin-left:5px;"></i>
+                                            افزودن به سبد خرید
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="product-add default">
-                                <div class="parent-btn">
-                                    <a href="#" class="dk-btn dk-btn-info">
-                                        افزودن به سبد خرید
-                                        <i class="now-ui-icons shopping_cart-simple"></i>
-                                    </a>
-                                </div>
-                            </div>
+                            </form>
                         </div>
-                        <div class="col-lg-4 col-md-6 col-sm-12 center-breakpoint">
+                        <div class="col-lg-4 col-sm-12 center-breakpoint">
                             <div class="product-guaranteed default">
                                 بیش از ۱۸۰ نفر از خریداران این محصول را پیشنهاد داده‌اند
                             </div>
-                            <div class="product-params default">
-                                <ul data-title="ویژگی‌های محصول">
-                                    <li>
-                                        <span>حافظه داخلی: </span>
-                                        <span> 256 گیگابایت </span>
-                                    </li>
-                                    <li>
-                                        <span>شبکه های ارتباطی: </span>
-                                        <span> 2G,3G,4G </span>
-                                    </li>
-                                    <li>
-                                        <span>رزولوشن عکس: </span>
-                                        <span> 12.0 مگاپیکسل</span>
-                                    </li>
-                                    <li>
-                                        <span>تعداد سیم کارت: </span>
-                                        <span> تک </span>
-                                    </li>
-                                    <li>
-                                        <span>ویژگی‌های خاص: </span>
-                                        <span> مقاوم در برابر آب
-                                            مناسب عکاسی
-                                            مناسب عکاسی سلفی
-                                            مناسب بازی
-                                            مجهز به حس‌گر تشخیص چهره
-                                        </span>
-                                    </li>
-                                </ul>
-                            </div>
+                            @if($product->attributes->count())
+                                <div class="product-params default">
+                                    <ul data-title="ویژگی‌های محصول">
+                                        @foreach($product->attributes as $attribute)
+                                            <li>
+                                                <span>{{ $attribute->name }}: </span>
+                                                <span>
+                                                    @php
+                                                        $valueId = $attribute->pivot->value_id ?? null;
+                                                        $attrValue = $attribute->values->where('id', $valueId)->first();
+                                                    @endphp
+                                                    {{ $attrValue ? $attrValue->value : '' }}
+                                                </span>
+                                            </li>
+                                        @endforeach
+                                    </ul>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </article>
             </div>
         </div>
         <div class="row">
-            <div class="container">
+            <div class="container mt-2">
                 <div class="col-12 default no-padding">
                     <div class="product-tabs default">
                         <div class="box-tabs default">
@@ -256,12 +231,12 @@
                                         <article>
                                             <h2 class="param-title">
                                                 نقد و بررسی تخصصی
-                                                <span>گوشی موبایل اپل مدل iPhone X ظرفیت 256 گیگابایت</span>
+                                                <span>{{ $product->title }}</span>
                                             </h2>
                                             <div class="parent-expert default">
                                                 <div class="content-expert">
                                                     <p>
-                                                        {{$product->text}}
+                                                        {!! $product->text !!}
                                                     </p>
                                                 </div>
                                                 <div class="sum-more">
@@ -457,87 +432,27 @@
                                         <article>
                                             <h2 class="param-title">
                                                 مشخصات فنی
-                                                <span>Apple iPhone X 256GB Mobile Phone</span>
+                                                <span>{{ $product->title }}</span>
                                             </h2>
                                             <section>
-                                                <h3 class="params-title">مشخصات کلی</h3>
+                                                <h3 class="params-title">مشخصات محصول</h3>
                                                 <ul class="params-list">
-                                                    <li>
-                                                        <div class="params-list-key">
-                                                            <span class="block">ابعاد</span>
-                                                        </div>
-                                                        <div class="params-list-value">
-                                                            <span class="block">
-                                                                7.7 × 70.9 × 143.6 میلی‌متر
-                                                            </span>
-                                                        </div>
-                                                    </li>
-                                                    <li>
-                                                        <div class="params-list-key">
-                                                            <span class="block">توضیحات سیم کارت</span>
-                                                        </div>
-                                                        <div class="params-list-value">
-                                                            <span class="block">
-                                                                سایز نانو (8.8 × 12.3 میلی‌متر)
-                                                            </span>
-                                                        </div>
-                                                    </li>
-                                                    <li>
-                                                        <div class="params-list-key">
-                                                            <span class="block">وزن</span>
-                                                        </div>
-                                                        <div class="params-list-value">
-                                                            <span class="block">
-                                                                174 گرم
-                                                            </span>
-                                                        </div>
-                                                    </li>
-                                                    <li>
-                                                        <div class="params-list-key">
-                                                            <span class="block">ویژگی‌های خاص</span>
-                                                        </div>
-                                                        <div class="params-list-value">
-                                                            <span class="block">
-                                                                مقاوم در برابر آب , مناسب عکاسی , مناسب عکاسی
-                                                                سلفی , مناسب بازی , مجهز به حس‌گر تشخیص چهره
-                                                            </span>
-                                                        </div>
-                                                    </li>
-                                                    <li>
-                                                        <div class="params-list-key">
-                                                            <span class="block">تعداد سیم کارت</span>
-                                                        </div>
-                                                        <div class="params-list-value">
-                                                            <span class="block">
-                                                                تک سیم کارت
-                                                            </span>
-                                                        </div>
-                                                    </li>
-                                                </ul>
-                                            </section>
-                                            <section>
-                                                <h3 class="params-title">پردازنده</h3>
-                                                <ul class="params-list">
-                                                    <li>
-                                                        <div class="params-list-key">
-                                                            <span class="block">تراشه</span>
-                                                        </div>
-                                                        <div class="params-list-value">
-                                                            <span class="block">
-                                                                Apple A11 Bionic Chipset
-                                                            </span>
-                                                        </div>
-                                                    </li>
-                                                    <li>
-                                                        <div class="params-list-key">
-                                                            <span class="block">نوع پردازنده</span>
-                                                        </div>
-                                                        <div class="params-list-value">
-                                                            <span class="block">
-                                                                64 بیت
-                                                            </span>
-                                                        </div>
-                                                    </li>
+                                                    @foreach($product->attributes as $attribute)
+                                                        <li>
+                                                            <div class="params-list-key">
+                                                                <span class="block">{{ $attribute->name }}</span>
+                                                            </div>
+                                                            <div class="params-list-value">
+                                                                <span class="block">
+                                                                    @php
+                                                                        $valueId = $attribute->pivot->value_id ?? null;
+                                                                        $attrValue = $attribute->values->where('id', $valueId)->first();
+                                                                    @endphp
+                                                                    {{ $attrValue ? $attrValue->value : '' }}
+                                                                </span>
+                                                            </div>
+                                                        </li>
+                                                    @endforeach
                                                 </ul>
                                             </section>
                                         </article>
@@ -546,29 +461,13 @@
                                         <article>
                                             <h2 class="param-title">
                                                 نظرات کاربران
-                                                <span>۱۲۳ نظر</span>
+                                                <span>{{ $comments->count() }} نظر</span>
                                             </h2>
                                             <div class="comments-area default">
                                                 <ol class="comment-list">
-                                                   @foreach ($comments as $comment)
-                                                      <!-- #comment-## -->
-                                                    <li>
-                                                        <div class="comment-body">
-                                                            <div class="comment-author">
-                                                                <img alt="" src="/assets/img/default-avatar.png" class="avatar"><cite class="fn">{{$comment->user->name}}</cite>
-                                                                <span class="says">گفت:</span> </div>
-
-                                                            <div class="commentmetadata">
-                                                                    {{$comment->created_at}} </div>
-
-                                                            <p>{{$comment->text}}</p>
-
-                                                            <div class="reply"><a class="comment-reply-link" href="#">پاسخ</a></div>
-                                                        </div>
-                                                    </li>  
-                                                   @endforeach
-                                                   
-
+                                                    @foreach ($comments->where('parent_id', 0) as $comment)
+                                                        @include('components.comment-item', ['comment' => $comment, 'product' => $product, 'level' => 0])
+                                                    @endforeach
                                                 </ol>
                                             </div>
                                         </article>
@@ -599,5 +498,92 @@
     </div>
 </main>
 <!-- main -->
+<style>
+    .color-circle {
+        display: inline-block;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        border: 2px solid #ccc;
+        vertical-align: middle;
+        margin-left: 5px;
+        transition: border 0.2s;
+    }
+</style>
+@endsection
+@section('script')
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const basePrice = {{ $basePrice }};
+            let colorIncrease = 0;
+            let guaranteeIncrease = 0;
+            function updatePrice() {
+                const finalPrice = basePrice + Number(colorIncrease) + Number(guaranteeIncrease);
+                document.getElementById('final-price').innerText = finalPrice.toLocaleString();
+                document.getElementById('final-price-input').value = finalPrice;
+            }
+            // انتخاب رنگ با لیبل و input hidden
+            document.querySelectorAll('#color-select-group .color-circle').forEach(function(label) {
+                label.addEventListener('click', function() {
+                    document.querySelectorAll('#color-select-group .color-circle').forEach(function(l) {
+                        l.style.border = '2px solid #ccc';
+                    });
+                    this.style.border = '2px solid #007bff';
+                    document.getElementById('selected-color-id').value = this.getAttribute('data-color-id');
+                    document.getElementById('color-id-input').value = this.getAttribute('data-color-id');
+                    colorIncrease = this.getAttribute('data-price-increase') || 0;
+                    updatePrice();
+                });
+            });
+            // اگر قبلاً رنگی انتخاب شده بود (مثلاً با old)، آن را فعال کن
+            @if(old('color_id'))
+                var selected = document.querySelector('#color-select-group .color-circle[data-color-id="{{ old('color_id') }}"]');
+                if(selected) {
+                    selected.style.border = '2px solid #007bff';
+                    document.getElementById('selected-color-id').value = selected.getAttribute('data-color-id');
+                    document.getElementById('color-id-input').value = selected.getAttribute('data-color-id');
+                    colorIncrease = selected.getAttribute('data-price-increase') || 0;
+                    updatePrice();
+                }
+            @endif
+            // گارانتی (استایل پیش‌فرض)
+            document.querySelectorAll('input[name="guarantee_id"]').forEach(function(radio) {
+                radio.addEventListener('change', function() {
+                    guaranteeIncrease = this.dataset.priceIncrease || 0;
+                    document.getElementById('guarantee-id-input').value = this.value;
+                    updatePrice();
+                });
+            });
+            // اگر گارانتی انتخاب شده بود، قیمت را آپدیت کن
+            const checkedGuarantee = document.querySelector('input[name="guarantee_id"]:checked');
+            if(checkedGuarantee) {
+                guaranteeIncrease = checkedGuarantee.dataset.priceIncrease || 0;
+                updatePrice();
+            }
+        });
 
+        document.addEventListener('DOMContentLoaded', function() {
+            var addToCartForm = document.getElementById('add-to-cart-form');
+            if(addToCartForm) {
+                addToCartForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    var formData = new FormData(addToCartForm);
+                    axios.post(addToCartForm.action, formData)
+                        .then(function(response) {
+                            swal('موفقیت', 'محصول با موفقیت به سبد خرید شما اضافه شد', 'success');
+                            // بروزرسانی سبد خرید کوچک هدر فقط با route جدید
+                            axios.get('/cart-header-partial').then(function(res){
+                                var cartDropdown = document.querySelector('.cart.dropdown .dropdown-menu');
+                                if(cartDropdown) {
+                                    cartDropdown.innerHTML = res.data;
+                                }
+                            });
+                        })
+                        .catch(function(error) {
+                            swal('خطا', 'خطا در افزودن محصول به سبد خرید', 'error');
+                        });
+                });
+            }
+        });
+    </script>
 @endsection

@@ -11,10 +11,10 @@
 @import url(css/nice-select.css);
 @import url(css/jquery-ui.min.css);
 @import url(css/default-assets/themify-icons.css);
-@import url(css/font-awesome.min.css);
+@import url(front/assets/fonts/font-awesome/css/font-awesome.min.css);
 @import url(css/pe-icon-7-stroke.min.css);
 @import url(css/style.css);
-@import url(css/material-design-iconic-font.min.css);
+/* @import url(css/material-design-iconic-font.min.css); */
 @import url(etline/style.css);
 /* :: Reboot CSS */
 * {
@@ -77,6 +77,17 @@ ul li,
 ol li {
   list-style: none;
   text-decoration: none; }
+
+input[type="color"] {
+    width: 100%;
+    min-width: 60px;
+    height: 34px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    border: 1px solid #ced4da;
+    background: #fff;
+    cursor: pointer;
+}
 
 img {
   max-width: 100%;

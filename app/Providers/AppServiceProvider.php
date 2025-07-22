@@ -24,6 +24,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        
+        \Illuminate\Support\Facades\View::composer('*', function ($view) {
+            $carts = collect();
+            if (auth()->check()) {
+                $carts = \App\Models\Cart::where('user_id', auth()->id())->get();
+            }
+            $view->with('carts', $carts);
+        });
     }
 }

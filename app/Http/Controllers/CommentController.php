@@ -20,6 +20,7 @@ class CommentController extends Controller
         // $request->user()->comments()->create($request->all());
         $request['user_id']=Auth::user()->id;
         Comment::create($request->all());
+        alert()->success('نظر شما با موفقیت ثبت شد، بعد از تأیید نمایش داده خواهد شد');
         return back();
     }
 }

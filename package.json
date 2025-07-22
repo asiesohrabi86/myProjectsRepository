@@ -10,6 +10,7 @@
         "production": "mix --production"
     },
     "devDependencies": {
+        "@babel/preset-react": "^7.27.1",
         "@popperjs/core": "^2.10.2",
         "axios": "^0.21",
         "bootstrap": "^5.1.3",
@@ -20,5 +21,16 @@
         "sass": "^1.32.11",
         "sass-loader": "^11.0.1",
         "sweetalert": "^2.1.2"
+    },
+    "dependencies": {
+        "@inertiajs/inertia": "^0.11.1",
+        "@inertiajs/inertia-react": "^0.8.1",
+        "@inertiajs/progress": "^0.2.7",
+        "@inertiajs/react": "^2.0.14",
+        "@ttskch/select2-bootstrap4-theme": "^1.5.2",
+        "jquery": "^3.7.1",
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1",
+        "select2": "^4.1.0-rc.0"
     }
 }

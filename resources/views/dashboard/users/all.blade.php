@@ -18,6 +18,20 @@
                                 </div>
                                 
                             </div>
+                            @if(session('success'))
+                                <div class="alert alert-success alert-dismissible fade show" role="alert" id="success-alert">
+                                    {{ session('success') }}
+                                    <button type="button" class="close" data-dismiss="alert" aria-label="بستن">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <script>
+                                    setTimeout(function() {
+                                        var alert = document.getElementById('success-alert');
+                                        if(alert) { alert.style.display = 'none'; }
+                                    }, 5000);
+                                </script>
+                            @endif
                             <table id="datatable-buttons" class="table table-striped dt-responsive nowrap w-100">
                                 <thead>
                                     <tr>
@@ -62,6 +76,7 @@
                                             @method('delete')
                                             <button type="submit" onclick="return confirm('آیا از حذف کاربر مطمئن هستید؟')" class="btn btn-danger btn-sm">حذف</button>
                                             </form>
+                                            <a href="{{route('users.role',$user->id)}}" class="btn btn-sm btn-success">دسترسی</a>
                                         </td>
                                     </tr>  
                                     @endforeach

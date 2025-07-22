@@ -37,7 +37,10 @@
                         {{Auth::user()->name}}
                        </a> 
                        <div class="dropdown-menu">
-                          <a class="dropdown-item" href="">پنل کاربری</a> 
+                          <a class="dropdown-item" href="/profile">پنل کاربری</a> 
+                          @if(Auth::user() && (Auth::user()->isAdmin() || Auth::user()->isOperator()))
+                              <a class="dropdown-item" href="/dashboard">پنل ادمین</a>
+                          @endif
                           <form action="{{route('logout')}}" method="POST">
                             @csrf
                             <button type="submit" class="dropdown-item btn btn-danger">خروج</button>
@@ -47,48 +50,20 @@
                    @endif
                 </div>
 
+                @auth
+                @php
+                    $carts = \App\Models\Cart::where('user_id', auth()->user()->id)->get();
+                @endphp
                 <div class="cart dropdown">
                     <a href="#" class="btn dropdown-toggle" data-toggle="dropdown" id="navbarDropdownMenuLink1">
                         <i class="now-ui-icons shopping_cart-simple"></i>
                         سبد خرید
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink1">
-                        <div class="basket-header">
-                            <div class="basket-total">
-                                <span>مبلغ کل خرید:</span>
-                                <span> ۲۳,۵۰۰</span>
-                                <span> تومان</span>
-                            </div>
-                            <a href="#" class="basket-link">
-                                <span>مشاهده سبد خرید</span>
-                                <div class="basket-arrow"></div>
-                            </a>
-                        </div>
-                        <ul class="basket-list">
-                            <li>
-                                <a href="#" class="basket-item">
-                                    <button class="basket-item-remove"></button>
-                                    <div class="basket-item-content">
-                                        <div class="basket-item-image">
-                                            <img alt="" src="front/assets/img/cart/2324935.jpg">
-                                        </div>
-                                        <div class="basket-item-details">
-                                            <div class="basket-item-title">هندزفری بلوتوث مدل S530
-                                            </div>
-                                            <div class="basket-item-params">
-                                                <div class="basket-item-props">
-                                                    <span> ۱ عدد</span>
-                                                    <span>رنگ مشکی</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </a>
-                            </li>
-                        </ul>
-                        <a href="#" class="basket-submit">ورود و ثبت سفارش</a>
+                        @include('layouts.partials.header-cart', ['carts' => $carts])
                     </ul>
                 </div>
+                @endauth
             </div>
         </div>
     </div>

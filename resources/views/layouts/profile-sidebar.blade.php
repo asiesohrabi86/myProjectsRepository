@@ -1,13 +1,15 @@
-<div class="profile-box-username">بهرامی راد</div>
-<div class="profile-box-tabs">
-    <a href="password-change.html" class="profile-box-tab profile-box-tab-access">
+<div class="profile-box-username">
+    {{ auth()->check() ? auth()->user()->name : 'کاربر مهمان' }}
+</div>
+<div class="profile-box-tabs d-flex justify-content-between">
+    <a href="{{ route('profile.change-password') }}" class="profile-box-tab d-flex align-items-center profile-box-tab-access">
         <i class="now-ui-icons ui-1_lock-circle-open"></i>
         تغییر رمز
     </a>
-    <a href="#" class="profile-box-tab profile-box-tab--sign-out">
-        <i class="now-ui-icons media-1_button-power"></i>
-        خروج از حساب
-    </a>
+    <form method="POST" action="{{ route('logout') }}">
+        @csrf
+        <button type="submit" class="btn btn-link">خروج از حساب</button>
+    </form>
 </div>
 </div>
 <div class="responsive-profile-menu show-md">
@@ -21,7 +23,7 @@
         <i class="now-ui-icons users_single-02"></i>
         پروفایل
         </a>
-        <a href="profile-orders.html" class="dropdown-item">
+        <a href="{{route('profile.orders')}}" class="dropdown-item">
         <i class="now-ui-icons shopping_basket"></i>
         همه سفارش ها
         </a>
@@ -50,7 +52,7 @@
         </a>
     </li>
     <li>
-        <a href="profile-orders.html">
+        <a href="{{route('profile.orders')}}">
             <i class="now-ui-icons shopping_basket"></i>
             همه سفارش ها
         </a>

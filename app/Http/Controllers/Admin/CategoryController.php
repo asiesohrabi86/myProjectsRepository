@@ -26,7 +26,8 @@ class CategoryController extends Controller
      */
     public function create()
     {
-        return view('dashboard.categories.create');
+       $parentCategories = Category::where('parent_id', null)->get();
+        return view('dashboard.categories.create', compact('parentCategories'));
     }
 
     /**
@@ -37,12 +38,19 @@ class CategoryController extends Controller
      */
     public function store(Request $request)
     {
-        $request->validate([
-            'name' => ['required','string','max:255'],
-            
+        // اعتبارسنجی داده‌های ارسالی
+        $validatedData = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'parent_id' => ['nullable', 'exists:categories,id'], // اختیاری، ولی باید معتبر باشه
         ]);
 
-        Category::create($request->all());
+        // ذخیره دسته‌بندی جدید
+        $category = Category::create([
+            'name' => $validatedData['name'],
+            'parent_id' => $validatedData['parent_id'] ?? null, // اگر parent_id نباشه، null می‌ذاریم
+        ]);
+
+        // ریدایرکت به صفحه لیست دسته‌بندی‌ها
         return redirect(route('categories.index'));
     }
 
@@ -63,9 +71,10 @@ class CategoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function edit($id)
+    public function edit(Category $category)
     {
-        //
+        $parentCategories = Category::where('parent_id', null)->get();
+        return view('dashboard.categories.edit', compact('parentCategories', 'category'));
     }
 
     /**
@@ -75,9 +84,22 @@ class CategoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, Category $category)
     {
-        //
+        // اعتبارسنجی داده‌های ارسالی
+        $validatedData = $request->validate([
+            'name' => ['required', 'string', 'max:255'],
+            'parent_id' => ['nullable', 'exists:categories,id'], // اختیاری، ولی باید معتبر باشه
+        ]);
+
+        // ذخیره دسته‌بندی جدید
+        $category ->update([
+            'name' => $validatedData['name'],
+            'parent_id' => $validatedData['parent_id'] ?? null, // اگر parent_id نباشه، null می‌ذاریم
+        ]);
+
+        // ریدایرکت به صفحه لیست دسته‌بندی‌ها
+        return redirect(route('categories.index'));
     }
 
     /**
@@ -86,8 +108,9 @@ class CategoryController extends Controller
      * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy($id)
+    public function destroy(Category $category)
     {
-        //
+        $category->delete();
+        return redirect(route('categories.index'));
     }
 }

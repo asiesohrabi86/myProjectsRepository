@@ -13,7 +13,6 @@
 <script src="/admin/js/default-assets/active.js"></script>
 
 <script>
-    CKEDITOR.replace('editor-id', {filebrowserImageBrowseUrl: '/file-manager/ckeditor'});
     document.addEventListener("DOMContentLoaded", function() {
 
 document.getElementById('button-image').addEventListener('click', (event) => {
@@ -42,3 +41,4 @@ document.getElementById('image_label').value = $url;
 <script src="/admin/js/default-assets/dashboard-2.js"></script>
 <script src="{{asset('/admin/js/ckeditor/ckeditor.js')}}"></script>
 <script src="{{asset('/vendor/file-manager/js/file-manager.js')}}"></script>
+@yield('script')

@@ -65,5 +65,14 @@ class LoginController extends Controller
         ]);
     }
 
+    public function logout(Request $request)
+    {
+        $this->guard()->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        // پاک کردن سشن two_factor_passed
+        $request->session()->forget('two_factor_passed');
+        return redirect('/');
+    }
     
 }

@@ -33,7 +33,7 @@
                                     <tr>
                                         <td>{{$category->id}}</td>
                                         <td>{{$category->name}}</td>
-                                        {{-- <td>{{$category->child->name}}</td> --}}
+                                        <td>{{$category->parent_id ? $category->parent->name : 'ندارد'}}</td>
 
                                         <td class="row">
                                             <a href="{{route('categories.edit',$category->id)}}" class="btn btn-success">ویرایش</a> 

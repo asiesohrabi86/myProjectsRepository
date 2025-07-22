@@ -1083,7 +1083,8 @@ main.main section.banner img {
 
 .product-carousel .owl-item img {
     display: block;
-    height: auto;
+    /* height: auto; */
+    height: 200px;
     margin: auto;
     max-width: 100%;
     width: auto !important;
@@ -3474,8 +3475,7 @@ main.single-product .product .gallery-items li {
 }
 
 main.single-product .product .gallery-items li img {
-    height: 60px;
-    width: 60px;
+    width: 300px;
 }
 
 .product-title {
@@ -5433,6 +5433,7 @@ main.profile-user-page .responsive-profile-menu .dropdown-menu a i {
     background-color: #ededed;
 }
 
+
 @media (max-width: 580px) {
     .order-info .table {
         width: 580px;
@@ -5443,10 +5444,10 @@ main.profile-user-page .responsive-profile-menu .dropdown-menu a i {
 
 /* responsive */
 @media (max-width: 1150px) {
-    main.single-product .product .gallery-items li img {
+    /* main.single-product .product .gallery-items li img {
         width: 45px;
         height: 45px;
-    }
+    } */
 }
 
 @media (max-width: 1077px) {
@@ -6763,9 +6764,9 @@ main.profile-user-page .responsive-profile-menu .dropdown-menu a i {
         display: block;
     }
 
-    .owl-nav {
+    /* .owl-nav {
         display: none !important;
-    }
+    } */
 
     .checkout-item {
         width: 490px;
@@ -6900,3 +6901,9 @@ main.profile-user-page .responsive-profile-menu .dropdown-menu a i {
 }
 
 /* responsive */
+
+.cart-item-image {
+    width: 70px;
+    height: 70px;
+    object-fit: contain;
+}

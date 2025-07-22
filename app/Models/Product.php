@@ -5,6 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use App\Models\Attribute;
+use App\Models\ProductColor;
+use App\Models\Cart;
 
 class Product extends Model
 {
@@ -15,6 +17,10 @@ class Product extends Model
         'price',
         'amount',
         'view',
+        'image',
+        'brand_id',
+        // 'metaTitle',
+        // 'metaDescription',
     ];
 
     public function user()
@@ -34,6 +40,24 @@ class Product extends Model
 
     public function attributes()
     {
-        return $this->belongsToMany(Attribute::class);
+        return $this->belongsToMany(Attribute::class)->withPivot('value_id');
+    }
+
+    public function carts()
+    {
+        return $this->hasMany(Cart::class);
+    }
+
+    public function brand()
+    {
+        return $this->belongsTo(Brand::class);
+    }
+
+    public function guarantees(){
+        return $this->hasMany(Guarantee::class);
+    }
+
+    public function colors() {
+        return $this->hasMany(ProductColor::class);
     }
 }

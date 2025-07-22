@@ -1,5 +1,5 @@
 @extends('dashboard.layouts.master')
-@section('title','ویرایش محصول')
+@section('title','ایجاد دسته بندی جدید')
     
 @section('content')
 <div class="main-content">
@@ -8,12 +8,12 @@
         <!-- Form row -->
         <div class="col-xl-6 box-margin height-card">
             <div class="card card-body">
-                <h4 class="card-title">فرم ویرایش محصول</h4>
+                <h4 class="card-title">فرم ویرایش دسته بندی</h4>
                 <div class="row">
                     <div class="col-sm-12 col-xs-12">
-                        <form action="{{route('products.update',$product->id)}}" method="POST">
+                        <form action="{{route('categories.update', $category->id)}}" method="POST">
                             @csrf
-                            @method('patch')
+                            @method('PUT')
                             @if ($errors->any())
                                 <ul class="alert alert-danger">
                                     @foreach ($errors->all() as $error)
@@ -22,23 +22,22 @@
                                 </ul>
                             @endif
                             <div class="form-group">
-                                <label for="exampleInputEmail111"> نام محصول</label>
-                                <input type="text" class="form-control" id="exampleInputEmail111" name="title" value="{{old('title',$product->title)}}">
+                                <label for="exampleInputEmail111">نام دسته بندی</label>
+                                <input type="text" class="form-control" id="exampleInputEmail111" value="{{old('name', $category->name)}}" name="name">
                             </div>
                             <div class="form-group">
-                                <label for="exampleInputEmail12">متن محصول</label>
-                                <textarea class="form-control" id="exampleInputEmail12" name="text">{{old('text',$product->text)}}</textarea>
-                            </div>
-                            <div class="form-group">
-                                <label for="exampleInputPassword11">قیمت محصول</label>
-                                <input type="text" class="form-control" id="exampleInputPassword11" name="price" value="{{old('price',$product->price)}}">
-                            </div>
-                            <div class="form-group">
-                                <label for="exampleInputPassword12">موجودی محصول</label>
-                                <input type="text" class="form-control" id="exampleInputPassword12" name="amount" value="{{old('amount',$product->amount)}}">
+                                <label for="parent_id">دسته پدر</label>
+                                <select name="parent_id" id="parent_id">
+                                    <option value="{{old('name', $category->parent_id)}}">ندارد</option>
+                                    @foreach ($parentCategories as $parent)
+                                        <option value="{{ $parent->id }}" {{$parent->id === $category->parent_id ? 'selected' : ''}}>
+                                            {{ $parent->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
                             </div>
                             
-                            <button type="submit" class="btn btn-primary mr-2">ویرایش محصول</button>
+                            <button type="submit" class="btn btn-primary mr-2">ثبت دسته بندی</button>
                             <button type="submit" class="btn btn-default">لغو</button>
                         </form>
                     </div>

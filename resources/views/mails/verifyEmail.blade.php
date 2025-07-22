@@ -4,15 +4,21 @@
 # {{ $greeting }}
 @else
 @if ($level === 'error')
-# @lang('Whoops!')
+# اوه!
 @else
-# @lang('سلام!')
+# سلام!
 @endif
 @endif
 
 {{-- Intro Lines --}}
 @foreach ($introLines as $line)
-{{ $line }}
+{{ str_replace([
+    'برای تایید ایمیل خود بر روی دگمه ی زیر کلیک کنید',
+    'اگر شما حساب کاربری را ایجاد نکردید، نیاز به انجام هیچ عملی نیست.'
+], [
+    'برای تایید ایمیل خود روی دکمه زیر کلیک کنید.',
+    'اگر شما این حساب کاربری را ایجاد نکرده‌اید، نیاز به انجام هیچ کاری نیست.'
+], $line) }}
 
 @endforeach
 
@@ -29,7 +35,7 @@
     }
 ?>
 @component('mail::button', ['url' => $actionUrl, 'color' => $color])
-{{ $actionText }}
+{{ $actionText == 'تایید ایمیل' ? 'تایید ایمیل' : $actionText }}
 @endcomponent
 @endisset
 
@@ -43,20 +49,19 @@
 @if (! empty($salutation))
 {{ $salutation }}
 @else
-@lang('با احترام'),<br>
+با احترام،<br>
 {{ config('app.name') }}
 @endif
 
 {{-- Subcopy --}}
 @isset($actionText)
 @slot('subcopy')
-@lang(
-    "اگر با کیلیک کردن روی دگمه ی \":actionText\" , مشگل دارید، لینک زیر را \n".
-    'در مرورگر خود کپی، پیست کنید:',
-    [
-        'actionText' => $actionText,
-    ]
-) <span class="break-all">[{{ $displayableActionUrl }}]({{ $actionUrl }})</span>
+@if($actionText == 'تایید ایمیل')
+اگر با کلیک روی دکمه «تایید ایمیل» مشکل دارید، لینک زیر را کپی و در مرورگر خود وارد کنید:
+@else
+اگر با کلیک روی دکمه «{{ $actionText }}» مشکل دارید، لینک زیر را کپی و در مرورگر خود وارد کنید:
+@endif
+<span class="break-all">[{{ $displayableActionUrl }}]({{ $actionUrl }})</span>
 @endslot
 @endisset
 @endcomponent

@@ -32,7 +32,7 @@ class ActivationCode extends Model
 
             $user->activationCode()->create([
                 'code'=> $code,
-                'expired-at'=> now()->addMinute(10),
+                'expired_at'=> now()->addMinute(10),
             ]);
 
             return $code;

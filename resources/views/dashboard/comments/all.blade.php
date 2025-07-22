@@ -22,40 +22,53 @@
                                         <th>مربوط به</th>
                                         <th>نام نظردهنده</th>
                                         <th>متن نظر</th>
+                                        <th>نظر والد</th>
                                         <th>وضعیت</th>
                                         <th>عملیات</th>
                                     </tr>
                                 </thead>
 
                                 <tbody>
-                                    @foreach ($comments as $comment)
-                                    <tr>
-                                        <td>{{$comment->id}}</td>
-                                        <td>
-                                            @if ($comment->commentable_type == 'App\Models\Product')
-                                                محصولات
-                                            @endif
-                                        </td>
-                                        <td>{{$comment->user->name}}</td>
-                                        <td>{{$comment->text}}</td>
-                                        <td>
-                                           @if ($comment->approved)
-                                               <span class="badge badge-success">تاییدشده</span>
-                                            @else
-                                                <span class="badge badge-danger">تاییدنشده</span>
-                                           @endif 
-                                        </td> 
-
-                                        <td class="row"> 
-                                          <form action="{{route('comments.destroy',$comment->id)}}" method="POST">
-                                            @csrf
-                                            @method('delete')
-                                            <button type="submit" onclick="return confirm('آیا از حذف نظر مطمئن هستید؟')" class="btn btn-danger btn-sm">حذف</button>
-                                            </form>
-                                        </td>
-                                    </tr>  
+                                    @php
+                                        function renderCommentRow($comment, $level = 0) {
+                                            echo '<tr style="background:'.($level ? '#f8f9fa' : 'inherit').';">';
+                                            echo '<td>'.$comment->id.'</td>';
+                                            echo '<td>';
+                                            if ($comment->commentable_type == 'App\\Models\\Product' && $comment->commentable) {
+                                                echo e($comment->commentable->title);
+                                            }
+                                            echo '</td>';
+                                            echo '<td>'.e($comment->user->name).'</td>';
+                                            echo '<td>'.e($comment->text).'</td>';
+                                            echo '<td>';
+                                            if ($comment->parent) {
+                                                echo e(Str::limit($comment->parent->text, 30));
+                                            }
+                                            echo '</td>';
+                                            echo '<td>';
+                                            if ($comment->approved) {
+                                                echo '<span class="badge badge-success">تاییدشده</span>';
+                                            } else {
+                                                echo '<span class="badge badge-danger">تاییدنشده</span>';
+                                            }
+                                            echo '</td>';
+                                            echo '<td class="row">';
+                                            echo '<form action="'.route('comments.destroy',$comment->id).'" method="POST">';
+                                            echo csrf_field();
+                                            echo method_field('delete');
+                                            echo '<button type="submit" onclick="return confirm(\'آیا از حذف نظر مطمئن هستید؟\')" class="btn btn-danger btn-sm">حذف</button>';
+                                            echo '</form>';
+                                            echo '</td>';
+                                            echo '</tr>';
+                                            // نمایش فرزندان
+                                            foreach ($comment->children as $child) {
+                                                renderCommentRow($child, $level + 1);
+                                            }
+                                        }
+                                    @endphp
+                                    @foreach ($comments->where('parent_id', 0) as $comment)
+                                        {!! renderCommentRow($comment) !!}
                                     @endforeach
-                                    
                                 </tbody>
                             </table>
 

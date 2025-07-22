@@ -8,6 +8,13 @@ use Illuminate\Http\Request;
 
 class CommentController extends Controller
 {
+    public function __construct()
+    {
+        $this->middleware('can:comments,user')->only('index');
+        $this->middleware('can:comment-destroy,user')->only('destroy');
+        $this->middleware('can:comment-unapproved,user')->only(['unapprovedGet','unapprovedPost']);
+    }
+    
     /**
      * Display a listing of the resource.
      *
@@ -15,7 +22,7 @@ class CommentController extends Controller
      */
     public function index()
     {
-        $comments = Comment::all();
+        $comments = Comment::with(['commentable', 'parent'])->get();
         return view('dashboard.comments.all',compact('comments'));
     }
 
@@ -94,7 +101,7 @@ class CommentController extends Controller
 
     public function unapprovedGet()
     {
-       $comments = Comment::where('approved',0)->get();
+       $comments = Comment::with(['commentable', 'parent'])->where('approved',0)->get();
         return view('dashboard.comments.unapproved',compact('comments'));
     }
 

@@ -17,5 +17,6 @@
     <script src="/admin/js/jquery.min.js"></script>
     <script src="{{asset('/js/app.js')}}"></script>
     <link rel="stylesheet" href="{{asset('/vendor/file-manager/css/file-manager.css')}}">
+    @yield('style')
 
 </head>
