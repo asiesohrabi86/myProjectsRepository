@@ -42,7 +42,7 @@ const AdminLayout = ({ children }) => {
   if (collapsed && !hovered) wrapperClass += ' sidemenu-hover-deactive';
 
   return (
-    <div className={wrapperClass}>
+    <div className={wrapperClass} style={{overflowX: 'hidden'}}>
       <Sidebar
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
@@ -54,7 +54,7 @@ const AdminLayout = ({ children }) => {
         />
         <main className="main-content">
           <div className="dashboard-area">
-            <div className="container-fluid">
+            <div className="container-fluid" style={{overflowX: 'hidden'}}>
               {children}
             </div>
           </div>

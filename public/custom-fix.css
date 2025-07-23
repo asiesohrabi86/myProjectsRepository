@@ -81,4 +81,8 @@
   content: "\e60f";
 }
 
+.ecaps-page-wrapper.menu-collasped-active .ecaps-page-content{
+  right: 0 !important;
+}
+
   

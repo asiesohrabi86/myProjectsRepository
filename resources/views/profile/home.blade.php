@@ -1,4 +1,5 @@
 @extends('layouts.profile-master')
+@section('title','پروفایل من')
 @section('content')
     <div class="row mb-3">
         <div class="col-12 text-left">
