@@ -39,7 +39,7 @@ const DashboardIncomeChart = ({ totalIncomeDataProp }) => {
 
     if (loading) {
         return (
-            <div className="card bg-info" aria-hidden="true">
+            <div className="card" aria-hidden="true">
                 <div className="card-body placeholder-glow">
                     <h5 className="card-title placeholder col-7"></h5>
                     <div className="earning-text mb-4 mt-4">
@@ -71,7 +71,7 @@ const DashboardIncomeChart = ({ totalIncomeDataProp }) => {
     const trendText = data.trend.direction === 'up' ? 'رشد نسبت به هفته قبل' : 'کاهش نسبت به هفته قبل';
 
     return (
-        <div className="card bg-info text-white">
+        <div className="card text-dark">
             <div className="card-body">
                 <h5 className="card-title">درآمد این هفته</h5>
                 <div className="earning-text my-4">
@@ -88,28 +88,35 @@ const DashboardIncomeChart = ({ totalIncomeDataProp }) => {
                     <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={data.chartData} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                             {/* افزودن گرید برای خوانایی بهتر */}
-                            <CartesianGrid strokeDasharray="3 3" stroke="#ffffff" opacity={0.2} />
+                            <CartesianGrid strokeDasharray="3 3" stroke="#4e73df" opacity={0.2} />
                             
                             {/* فعال کردن محور افقی (X) */}
                             <XAxis 
                                 dataKey="name" 
-                                tick={{ fill: '#ffffff', fontFamily: 'inherit', fontSize: 12 }} 
-                                axisLine={{ stroke: '#ffffff', opacity: 0.5 }}
-                                tickLine={{ stroke: '#ffffff', opacity: 0.5 }}
+                                tick={{ fill: '#4e73df', fontFamily: 'inherit', fontSize: 12 }} 
+                                axisLine={{ stroke: '#4e73df', opacity: 0.5 }}
+                                tickLine={{ stroke: '#4e73df', opacity: 0.5 }}
                             />
                             
                             {/* فعال کردن محور عمودی (Y) */}
                             <YAxis 
                                 tickFormatter={(value) => new Intl.NumberFormat('fa-IR', { notation: 'compact' }).format(value)}
-                                tick={{ fill: '#ffffff', fontFamily: 'inherit', fontSize: 10 }}
-                                axisLine={{ stroke: '#ffffff', opacity: 0.5 }}
-                                tickLine={{ stroke: '#ffffff', opacity: 0.5 }}
+                                tick={{ fill: '#4e73df', fontFamily: 'inherit', fontSize: 10 }}
+                                axisLine={{ stroke: '#4e73df', opacity: 0.5 }}
+                                tickLine={{ stroke: '#4e73df', opacity: 0.5 }}
                             />
                             
                             {/* افزودن Tooltip برای نمایش مقدار دقیق روی هاور */}
                             <Tooltip content={<CustomTooltip />} />
                             
-                            <Line type="monotone" dataKey="value" stroke="#ffffff" strokeWidth={3} dot={false} activeDot={{ r: 6, fill: '#fff' }} />
+                            <Line 
+                                type="linear" // <-- تغییر از "monotone" به "linear" برای ایجاد خط شکسته
+                                dataKey="value" 
+                                stroke="#4e73df" 
+                                strokeWidth={2} 
+                                dot={{ r: 4, strokeWidth: 2, fill: '#4e73df' }} // <-- افزودن نقطه در هر شکستگی
+                                activeDot={{ r: 6, fill: '#4e73df' }} 
+                            />
                         </LineChart>
                     </ResponsiveContainer>
                 </div>
