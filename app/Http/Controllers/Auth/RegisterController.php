@@ -66,12 +66,18 @@ class RegisterController extends Controller
      */
     protected function create(array $data)
     {
-        return User::create([
+        $user = User::create([
             'name' => $data['name'],
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
         ]);
-    }
+        // لاگ کردن فعالیت
+        activity('new_user')
+            ->performedOn($user)
+            ->log("کاربر جدیدی با نام {$user->name} ثبت‌نام کرد.");
+
+        return $user;
+        }
 
     /**
      * The user has been registered.

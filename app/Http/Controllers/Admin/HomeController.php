@@ -4,11 +4,16 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
+use App\Models\Product;
+use App\Models\User;
+use App\Models\ChatMessage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Carbon\Carbon;
 use Hekmatinasser\Verta\Verta;
+use Spatie\Activitylog\Models\Activity; 
+use App\Http\Controllers\Admin\ChatController;
 
 class HomeController extends Controller
 {
@@ -26,6 +31,11 @@ class HomeController extends Controller
             'totalIncomeData' => fn() => $this->getTotalIncomeData(),
             // داده‌های جدید برای بخش ویجت‌ها
             'widgetsData' => fn() => $this->getWidgetsData(),
+            // اضافه کردن داده محصولات برتر
+            'topProducts' => fn() => $this->getTopProducts(),
+            'newUsersData' => fn() => $this->getNewUsersData(),
+            'notificationsData' => fn() => $this->getNotificationsData(),
+            'chatData' => fn() => $this->getChatData(),
         ]);
     }
     
@@ -219,10 +229,42 @@ class HomeController extends Controller
             ->whereDate('created_at', today())
             ->count();
 
-        // ویجت ۲: بازدیدکنندگان امروز (شبیه‌سازی شده)
-        // TODO: این بخش باید با منطق واقعی شمارش بازدیدکنندگان شما جایگزین شود.
-        // برای مثال، اگر از پکیجی استفاده می‌کنید، باید از آن کوئری بگیرید.
-        $todayVisitorsCount = rand(1500, 2500);
+        // 1. ابتدا تمام causer_id های یکتای امروز را پیدا می‌کنیم. اینها کاربران لاگین کرده ما هستند.
+        $todayLoggedInUserIds = Activity::query()
+            ->where('log_name', 'route-visit')
+            ->whereDate('created_at', today())
+            ->whereNotNull('causer_id')
+            ->pluck('causer_id')
+            ->unique();
+        
+        // تعداد آنها را می‌شماریم.
+        $loggedInVisitorCount = $todayLoggedInUserIds->count();
+
+        // 2. حالا به سراغ مهمانان می‌رویم. ما فقط سشن‌هایی را می‌خواهیم که متعلق به کاربرانی که در لیست بالا هستند، نباشند.
+        // برای این کار، ابتدا تمام سشن‌های متعلق به کاربران لاگین کرده را استخراج می‌کنیم.
+        $sessionsAssociatedWithUsers = Activity::query()
+            ->where('log_name', 'route-visit')
+            ->whereDate('created_at', today())
+            ->whereIn('causer_id', $todayLoggedInUserIds)
+            ->select(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(properties, '$.session_id')) as session_id"))
+            ->pluck('session_id')
+            ->unique();
+
+        // 3. حالا تعداد سشن‌های مهمان یکتا را می‌شماریم که در لیست بالا نیستند.
+        $guestVisitorCount = Activity::query()
+            ->where('log_name', 'route-visit')
+            ->whereDate('created_at', today())
+            ->whereNull('causer_id') // فقط مهمانان
+            // شرط اصلی: سشن آنها نباید در لیست سشن‌های کاربران لاگین کرده باشد.
+            ->when($sessionsAssociatedWithUsers->isNotEmpty(), function ($query) use ($sessionsAssociatedWithUsers) {
+                $query->whereNotIn(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(properties, '$.session_id'))"), $sessionsAssociatedWithUsers);
+            })
+            ->distinct(DB::raw("JSON_UNQUOTE(JSON_EXTRACT(properties, '$.session_id'))"))
+            ->count();
+
+        // 4. تعداد کل بازدیدکنندگان برابر است با جمع این دو گروه کاملاً مجزا.
+        $todayVisitorsCount = $loggedInVisitorCount + $guestVisitorCount;
+
 
         // ویجت ۳: مجموع کل درآمد (از ابتدا)
         $totalAllTimeIncome = Transaction::where('status', Transaction::STATUS_SUCCESS)
@@ -235,4 +277,162 @@ class HomeController extends Controller
         ];
     }
     
+    /**
+     * محصولات برتر بر اساس بیشترین فروش (تعداد سفارش یا مجموع مبلغ)
+     */
+    private function getTopProducts($limit = 10)
+    {
+        // این کوئری محصولات را بر اساس تعداد فروششان در سفارشات موفق، رتبه‌بندی می‌کند.
+        $topProducts = Product::query()
+            ->select([
+                'products.id',
+                'products.title',
+                'products.price',
+                'products.amount',
+                'products.image',
+                // شمارش تعداد آیتم‌های سفارش مرتبط با هر محصول
+                DB::raw('COUNT(order_items.id) as sales_count'),
+                // جمع کل مبلغ آیتم‌های سفارش (دقیق‌تر از paid در تراکنش)
+                DB::raw('SUM(order_items.price * order_items.quantity) as total_income')
+            ])
+            // از طریق OrderItem به Order و سپس به Transaction وصل می‌شویم
+            ->join('order_items', 'products.id', '=', 'order_items.product_id')
+            ->join('orders', 'order_items.order_id', '=', 'orders.id')
+            ->join('transactions', 'orders.basket_id', '=', 'transactions.basket_id') // فرض بر اینکه basket_id کلید اتصال است
+            // شرط اصلی: فقط تراکنش‌های موفق
+            ->where('transactions.status', Transaction::STATUS_SUCCESS)
+            ->groupBy('products.id', 'products.title', 'products.price', 'products.amount', 'products.image')
+            ->orderByDesc('sales_count')
+            ->limit($limit)
+            ->get();
+
+        // تبدیل داده به فرمت مورد نیاز جدول در فرانت‌اند
+        return $topProducts->map(function($product) {
+            return [
+                'img' => $product->image ? asset('storage/' . $product->image) : 'https://via.placeholder.com/50', // افزودن آدرس صحیح و یک placeholder
+                'name' => $product->title,
+                'code' => 'P-' . $product->id, // یک کد خواناتر
+                'auction' => $product->sales_count, // "حراجی" در واقع تعداد فروش است
+                'income' => number_format($product->total_income) . ' تومان',
+                'stock' => $product->amount,
+                'progress' => $product->amount > 0 ? min(100, round(($product->amount / 100) * 100)) : 0, // فرض: 1000 حداکثر موجودی
+                'progressClass' => $product->amount > 500 ? 'bg-success' : ($product->amount > 200 ? 'bg-warning' : 'bg-danger'),
+            ];
+        });
+    }
+
+    private function getNewUsersData($limit = 5)
+    {
+        // تابع کمکی برای فرمت کردن داده‌های کاربر
+        $formatUser = function (User $user) {
+            return [
+                // برای تصویر پروفایل، از یک سرویس آواتار جنریک مثل ui-avatars.com استفاده می‌کنیم
+                // که بر اساس نام کاربر، یک تصویر می‌سازد.
+                'img' => 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=random&color=fff',
+                'name' => $user->name,
+                // اولین نقشی که کاربر دارد را به عنوان role نمایش می‌دهیم
+                'role' => $user->roles->first()->name ?? 'کاربر عادی',
+            ];
+        };
+
+        // ۱. دریافت کاربرانی که امروز ثبت‌نام کرده‌اند
+        $todayUsers = User::query()
+            ->whereDate('created_at', today())
+            ->latest() // جدیدترین‌ها در ابتدا
+            ->limit($limit)
+            ->with('roles') // برای جلوگیری از N+1 query problem
+            ->get()
+            ->map($formatUser);
+
+        // ۲. دریافت کاربرانی که در ماه شمسی جاری ثبت‌نام کرده‌اند
+        $startOfMonth = Verta::now()->startMonth()->toCarbon();
+        $endOfMonth = Verta::now()->endMonth()->toCarbon();
+        
+        $monthUsers = User::query()
+            ->whereBetween('created_at', [$startOfMonth, $endOfMonth])
+            ->latest()
+            ->limit($limit)
+            ->with('roles')
+            ->get()
+            ->map($formatUser);
+            
+        return [
+            'today' => $todayUsers,
+            'month' => $monthUsers,
+        ];
+    }
+
+    private function getNotificationsData($limit = 5)
+    {
+        // دریافت 5 فعالیت آخر از نوع‌هایی که برای ما مهم هستند
+        $activities = Activity::query()
+            ->whereIn('log_name', ['new_order', 'new_user', 'new_comment'])
+            ->latest() // جدیدترین‌ها در ابتدا
+            ->limit($limit)
+            ->get();
+            
+        // تبدیل داده‌ها به فرمت مورد نیاز فرانت‌اند
+        return $activities->map(function (Activity $activity) {
+            // تعیین آیکون و تصویر بر اساس نوع نوتیفیکیشن
+            $icon = 'fa-bell'; // پیش‌فرض
+            $img = 'https://ui-avatars.com/api/?name=N&background=random&color=fff'; // پیش‌فرض
+
+            if ($activity->log_name === 'new_order') {
+                $icon = 'fa-shopping-cart text-success';
+                if ($activity->causer) {
+                    $img = 'https://ui-avatars.com/api/?name=' . urlencode($activity->causer->name) . '&background=4e73df&color=fff';
+                }
+            } elseif ($activity->log_name === 'new_user') {
+                $icon = 'fa-user-plus text-info';
+                if ($activity->subject) {
+                    $img = 'https://ui-avatars.com/api/?name=' . urlencode($activity->subject->name) . '&background=1cc88a&color=fff';
+                }
+            } elseif ($activity->log_name === 'new_comment') {
+                $icon = 'fa-comment text-warning';
+                if ($activity->causer) {
+                    $img = 'https://ui-avatars.com/api/?name=' . urlencode($activity->causer->name) . '&background=f6c23e&color=fff';
+                }
+            }
+
+            return [
+                'id' => $activity->id,
+                'icon' => $icon,
+                'img' => $img,
+                'text' => $activity->description,
+                'time' => $activity->created_at->diffForHumans(), // مثلا "۵ دقیقه پیش"
+            ];
+        });
+    }
+
+    private function getChatData($limit = 20) // افزایش محدودیت برای دیدن تاریخچه بیشتر
+    {
+        $adminUserId = auth()->id();
+
+        // تمام پیام‌ها را واکشی می‌کنیم، چه فرستنده کاربر باشد چه ادمین
+        $messages = ChatMessage::query()
+            ->with('user') // برای دسترسی به نام و اطلاعات فرستنده
+            ->latest()
+            ->limit($limit)
+            ->get()
+            ->reverse() // برعکس کردن ترتیب برای نمایش صحیح (قدیمی‌ها بالا، جدیدها پایین)
+            ->values();
+
+        return $messages->map(function (ChatMessage $message) use ($adminUserId) {
+            if (!$message->user) {
+                return null; 
+            }
+
+            return [
+                'id' => $message->id,
+                'text' => $message->message,
+                // **منطق کلیدی:** اگر ID فرستنده پیام با ID ادمین فعلی یکی باشد، is_sender=true است
+                'is_sender' => $message->user_id === $adminUserId,
+                'user' => [
+                    'id' => $message->user->id,
+                    'name' => $message->user->name,
+                    'avatar' => 'https://ui-avatars.com/api/?name=' . urlencode($message->user->name) . '&background=random&color=fff'
+                ]
+            ];
+        })->filter(); // حذف هر پیامی که به هر دلیلی کاربر ندارد
+    }
 }

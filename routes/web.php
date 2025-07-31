@@ -28,6 +28,7 @@ use App\Http\Controllers\TestRegController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Hekmatinasser\Verta\Verta;
+use App\Http\controllers\Api\ChatController;
 
 /*
 |--------------------------------------------------------------------------
@@ -122,6 +123,10 @@ Route::prefix('/dashboard')->group(function(){
     Route::resource('/orders',OrderController::class);
     Route::get('/orders/invoice/{id}',[OrderController::class,'invoice'])->name('invoice.index');
     Route::put('/orders/invoice/{id}',[OrderController::class,'invoiceStatus'])->name('status.invoice');
+
+    // chats
+    Route::get('/chat/messages', [\App\Http\Controllers\Admin\ChatController::class, 'fetchMessages'])->name('dashboard.chat.fetch');
+    Route::post('/chat/messages', [\App\Http\Controllers\Admin\ChatController::class, 'sendMessage'])->name('dashboard.chat.send');
 });
 
 
@@ -148,5 +153,15 @@ Route::get('/product/{id}/purchase/result',[PurchaseController::class,'result'])
 Route::get('/auth/resend-activation-code',[AuthTokenController::class,'resendActivationCode'])->name('resend.activation.code');
 
 Route::get('/cart-header-partial', [App\Http\Controllers\CartController::class, 'headerPartial'])->middleware('auth');
+
+// افزودن گروه روت‌های API برای چت
+// routes/web.php
+
+// روت‌های چت برای ویجت سایت اصلی که از میدل‌ور auth وب استفاده می‌کنند
+Route::prefix('chat-api')->middleware(['auth', 'verified'])->group(function () {
+    Route::get('/messages/{user}', [ChatController::class, 'fetchMessages'])->name('chat.fetchMessages');
+    Route::post('/send', [ChatController::class, 'sendMessage'])->name('chat.sendMessage');
+});
+
 
 // Auth::routes();

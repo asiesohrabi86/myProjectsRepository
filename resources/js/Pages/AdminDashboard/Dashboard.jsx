@@ -1,7 +1,7 @@
 import React from 'react';
 // فرض می‌کنیم Layout شما در این مسیر است
 import AdminLayout from './Layout/AdminLayout'; 
-import DashboardHeader from './DashboardHeader'; // مسیرها را متناسب با پروژه خود تنظیم کنید
+import DashboardHeader from './DashboardHeader'; 
 import ThemeSettings from './ThemeSettings';
 import DashboardEarningCard from './DashboardEarningCard';
 import DashboardBestSellerCard from './DashboardBestSellerCard';
@@ -46,7 +46,7 @@ const Dashboard = (props) => {
                     <AnnualSummaryBarChart/>
                 </div>
                 <div className="col-12 box-margin">
-                    <TopProductTable/>
+                    <TopProductTable products={props.topProducts} />
                 </div>
                 <div className="col-12 col-md-6 col-xl-4 box-margin">
                     <NewUsers />
@@ -55,7 +55,7 @@ const Dashboard = (props) => {
                     <Notifications />
                 </div>
                 <div className="col-12 col-md-6 col-xl-4 box-margin">
-                    <ChatBoxWidget />
+                    <ChatBoxWidget chatData={props.chatData} />
                 </div>
             </div>
         </AdminLayout>

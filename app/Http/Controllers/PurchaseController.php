@@ -124,6 +124,11 @@ class PurchaseController extends Controller
             $basket->carts()->delete();
             // ریدایرکت به لیست سفارش‌ها با پیام موفقیت
             $orders = Order::where(['user_id' => auth()->user()->id, 'isActive' => 1])->get();
+            // لاگ کردن فعالیت
+            activity('new_order')
+                ->performedOn($transaction->basket->orders()->first()) // مدل مرتبط: سفارش
+                ->causedBy($transaction->user) // کاربری که باعث این رویداد شد
+                ->log("سفارش جدیدی به مبلغ " . number_format($transaction->paid) . " تومان ثبت شد.");
             return redirect()->route('profile.orders', compact('orders'))->with('success', 'پرداخت با موفقیت انجام شد و سفارش شما ثبت شد.');
         }catch(Exception|InvalidPaymentException $e){
             if($e->getCode()<0){

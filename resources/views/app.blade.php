@@ -3,6 +3,8 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+    <!-- CSRF Token -->
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 
      <link rel="stylesheet" href="{{ mix('css/app.css') }}">
      <link href="/front/assets/css/bootstrap.min.css" rel="stylesheet" />
@@ -22,16 +24,14 @@
 
     @routes
     <script src="{{ mix('js/app.js') }}" defer></script>
-    
-    @inertiaHead
+   
 </head>
 <body>
-    @inertia
 
     <script src="/admin/js/jquery.min.js"></script>
     <script src="/admin/js/popper.min.js"></script>
     <script src="/admin/js/bootstrap.min.js"></script>
-    <script src="/admin/js/bundle.js"></script>
+    {{-- <script src="/admin/js/bundle.js"></script>
     <script src="/admin/js/default-assets/date-time.js"></script>
     <script src="/admin/js/default-assets/setting.js"></script>
     <script src="/admin/js/default-assets/fullscreen.js"></script>
@@ -47,8 +47,8 @@
     <script src="/admin/js/default-assets/light.js"></script>
     <script src="/admin/js/default-assets/ammap.min.js"></script>
     <script src="/admin/js/default-assets/worldlow.js"></script>
-    <script src="/admin/js/default-assets/radar.js"></script>
-    <script src="/admin/js/default-assets/dashboard-2.js"></script>
+    <script src="/admin/js/default-assets/radar.js"></script> --}}
+    {{-- <script src="/admin/js/default-assets/dashboard-2.js"></script> --}}
     
 </body>
 </html>

@@ -7,6 +7,7 @@
         name='viewport' />
     <title>لاراول لرن-@yield('title')</title>
     <meta name="csrf-token" content="{{ csrf_token() }}">
+     @routes
     {!! SEO::generate(true) !!}
     <!--     Fonts and icons     -->
     <link rel="stylesheet" href="/front/assets/fonts/font-awesome/css/font-awesome.min.css" />

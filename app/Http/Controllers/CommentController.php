@@ -19,8 +19,13 @@ class CommentController extends Controller
 
         // $request->user()->comments()->create($request->all());
         $request['user_id']=Auth::user()->id;
-        Comment::create($request->all());
+        $comment = Comment::create($request->all());
+        activity('new_comment')
+            ->performedOn($comment)
+            ->causedBy(auth()->user())
+            ->log("یک نظر جدید برای محصول \"{$comment->commentable->title}\" ثبت شد.");
         alert()->success('نظر شما با موفقیت ثبت شد، بعد از تأیید نمایش داده خواهد شد');
+        // لاگ کردن فعالیت
         return back();
     }
 }

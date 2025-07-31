@@ -180,7 +180,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 _method: 'DELETE',
             })
             .then(function(response) {
-                alert('hi');
                 row.remove();
                 // بروزرسانی مبلغ کل
                 if(response.data && response.data.total !== undefined) {

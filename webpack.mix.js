@@ -1,27 +1,26 @@
+// webpack.mix.js
+
 const mix = require('laravel-mix');
 const path = require('path');
 
-/*
- |--------------------------------------------------------------------------
- | Mix Asset Management
- |--------------------------------------------------------------------------
- |
- | Mix provides a clean, fluent API for defining some Webpack build steps
- | for your Laravel application. By default, we are compiling the Sass
- | file for the application as well as bundling up all the JS files.
- |
- */
+// ۱. فایل JS برای صفحات Blade قدیمی سایت شما (شامل bootstrap.js)
+mix.js('resources/js/app.js', 'public/js/app.js');
+// فایل ورودی برای پنل ادمین Inertia
+mix.js('resources/js/inertia.js', 'public/js/inertia.js').react();
 
-mix.js('resources/js/app.jsx', 'public/js').react()
-   .postCss('resources/css/app.css', 'public/css', [
+// فایل ورودی برای ویجت چت سایت اصلی
+mix.js('resources/js/chat.js', 'public/js/chat.js').react();
+
+// CSS های شما (بدون تغییر)
+mix.postCss('resources/css/app.css', 'public/css', [
     //
-])
-.sourceMaps();
+]);
 
+// تنظیمات دیگر (بدون تغییر)
+mix.sourceMaps();
 if (mix.inProduction()) {
     mix.version();
 }
-
 mix.webpackConfig({
     resolve: {
         alias: {

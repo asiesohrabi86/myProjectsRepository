@@ -1,51 +1,102 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
+import { router, useForm, usePage } from '@inertiajs/react';
 
-const chats = [
-  { left: false, img: 'admin/img/member-img/1.png', text: 'چطور میتوانیم کمک کنیم؟ ما برای شما اینجا هستیم', white: true },
-  { left: true, img: 'admin/img/member-img/2.png', text: 'سلام جیکوب ، می توانید به من کمک کنید تا آن را دریابم؟' },
-  { left: false, img: 'admin/img/member-img/3.png', text: 'کاملا!', white: true },
-  { left: true, img: 'admin/img/member-img/4.png', text: 'من به دنبال بهترین الگوی سرپرست هستم.' },
-  { left: false, img: 'admin/img/member-img/5.png', text: 'Crest admin الگوی مدیریت پاسخگو bootstrap 4 است.', white: true },
-  { left: true, img: 'admin/img/member-img/6.png', text: 'به نظر می رسد UI تمیز و تازه.' },
-  { left: true, img: 'admin/img/member-img/6.png', text: 'این مناسب برای پروژه بعدی من است.' },
-];
+const ChatBoxWidget = () => {
+    const { props } = usePage();
+    const messages = props.chatData || [];
+    
+    const [activeRecipient, setActiveRecipient] = useState(null);
+    const chatBoxRef = useRef(null);
 
-const ChatBoxWidget = () => (
-  <div className="card mb-3">
-    <div className="card-content">
-      <div className="card-body chat-application">
-        <h4 className="card-title">گپ</h4>
-        <div className="chats" id="chatBox">
-          <div className="chats">
-            {chats.map((c, i) => (
-              <div className={`chat${c.left ? ' chat-left' : ''}`} key={i}>
-                <div className="chat-avatar">
-                  <a className="avatar" data-toggle="tooltip" href="#" data-placement={c.left ? 'left' : 'right'} title="" data-original-title="">
-                    <img src={c.img} alt="آواتار" />
-                  </a>
+    const { data, setData, post, processing, reset, errors } = useForm({
+        message: '',
+        recipient_id: '',
+    });
+
+    // افکت برای اسکرول
+    useEffect(() => {
+        if (chatBoxRef.current) chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
+    }, [messages.length]);
+
+    // **شروع بخش جدید: Polling برای دریافت پیام‌های جدید**
+    useEffect(() => {
+        // هر ۱۰ ثانیه، پراپ chatData را دوباره بارگذاری کن
+        const interval = setInterval(() => {
+            router.reload({
+                only: ['chatData'], // فقط همین پراپ را بگیر
+                preserveState: true, // state فرم را حفظ کن
+                preserveScroll: true, // اسکرول را حفظ کن
+            });
+        }, 10000); // ۱۰ ثانیه
+
+        // تابع پاک‌سازی: در زمان unmount شدن کامپوننت، interval را متوقف کن
+        return () => clearInterval(interval);
+    }, []); // فقط یک بار اجرا شود
+
+    // افکت برای پیدا کردن کاربر فعال
+    useEffect(() => {
+        const lastUserMessage = [...messages].reverse().find(msg => !msg.is_sender && msg.user);
+        if (lastUserMessage) {
+            setActiveRecipient(lastUserMessage.user);
+            setData('recipient_id', lastUserMessage.user.id);
+        }
+    }, [messages]);
+
+    const submit = (e) => {
+        e.preventDefault();
+        if (!activeRecipient) return;
+
+        post(route('dashboard.chat.send'), {
+            preserveScroll: true,
+            onSuccess: () => reset('message'),
+        });
+    };
+    
+    return (
+        <div className="card full-height d-flex flex-column">
+            <div className="card-header bg-transparent"><h4 className="card-title">پشتیبانی زنده</h4></div>
+            <div className="card-body chat-application" style={{ flex: '1 1 auto', overflowY: 'auto', minHeight: '300px' }} ref={chatBoxRef}>
+                <div className="chats">
+                    {messages.length > 0 ? messages.map((msg, index) => (
+                        <div className={`chat${!msg.is_sender ? ' chat-left' : ''}`} key={msg.id || `msg-${index}`}>
+                            <div className="chat-avatar"><a className="avatar"><img src={msg.user.avatar} alt={msg.user?.name} className="rounded-circle" width="40" height="40"/></a></div>
+                            <div className="chat-body">
+                                <div className={`chat-content${msg.is_sender ? ' text-white bg-primary' : ''}`}>
+                                    {!msg.is_sender && <p className="text-muted font-weight-bold mb-1">{msg.user?.name}</p>}
+                                    <p className="mb-0">{msg.text}</p>
+                                </div>
+                            </div>
+                        </div>
+                    )) : <p className="text-center text-muted">هیچ پیامی برای نمایش وجود ندارد.</p>}
                 </div>
-                <div className="chat-body">
-                  <div className={`chat-content${c.white ? ' text-white' : ''}`}>{c.text}</div>
-                </div>
-              </div>
-            ))}
-          </div>
+            </div>
+            <div className="card-footer">
+                <form onSubmit={submit} className="chat-app-input">
+                    <fieldset>
+                        <div className="input-group">
+                            <input
+                                type="text"
+                                className="form-control"
+                                placeholder={activeRecipient ? `پاسخ به ${activeRecipient.name}` : 'در انتظار پیام کاربر...'}
+                                value={data.message}
+                                onChange={e => setData('message', e.target.value)}
+                                disabled={!activeRecipient || processing}
+                            />
+                            <div className="input-group-append">
+                                <button className="btn btn-primary" type="submit" disabled={!activeRecipient || processing}>
+                                    {processing ? 'در حال ارسال...' : 'ارسال'}
+                                </button>
+                            </div>
+                        </div>
+                        {/* نمایش خطاهای ولیدیشن از سمت سرور */}
+                        {errors.recipient_id && <div className="text-danger mt-1 small">{errors.recipient_id}</div>}
+                        {errors.message && <div className="text-danger mt-1 small">{errors.message}</div>}
+                    </fieldset>
+                </form>
+            </div>
         </div>
-        <form className="chat-app-input mt-1 row">
-          <div className="col-12">
-            <fieldset>
-              <div className="input-group position-relative has-icon-left">
-                <input type="text" className="form-control" placeholder="پیام" aria-describedby="button-addon3" />
-                <div className="input-group-append">
-                  <button className="btn btn-primary" type="button">ارسال</button>
-                </div>
-              </div>
-            </fieldset>
-          </div>
-        </form>
-      </div>
-    </div>
-  </div>
-);
+    );
+};
 
 export default ChatBoxWidget;
+

@@ -27,6 +27,17 @@
     </div>
     @include('sweet::alert')
     @yield('script')
+
+    @auth
+        {{-- ویجت چت را فقط برای کاربرانی نمایش بده که ادمین نیستند --}}
+        @if(!auth()->user()->isAdmin())
+            <div id="chat-widget-container" 
+                data-user-id="{{ auth()->id() }}">
+                {{-- data-is-admin دیگر لازم نیست --}}
+            </div>
+            <script src="{{ mix('js/chat.js') }}"></script>
+        @endif
+    @endauth
    
 </body>
 

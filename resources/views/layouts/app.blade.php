@@ -6,14 +6,19 @@
     <meta name="description" content="">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    {{-- افزودن تگ ضروری CSRF Token --}}
+    <meta name="csrf-token" content="{{ csrf_token() }}">
 <!-- Title -->
     <title>@yield('title','page-title')</title>
 
+    {{-- بارگذاری فایل CSS تمیز شده برای اینرشیا --}}
+    <link href="{{ mix('/css/app.css') }}" rel="stylesheet" />
     <!-- Favicon -->
     <link rel="icon" href="{{asset('admin/img/core-img/favicon.png')}}">
 
     <link rel="stylesheet" href="{{asset('admin/style.css')}}">
-    <script src="{{asset('js/app.js')}}"></script>
+    @routes
+    <script src="{{ mix('js/app.js') }}" defer></script>
 
 </head>
 
