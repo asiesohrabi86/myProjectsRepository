@@ -362,7 +362,7 @@ class HomeController extends Controller
         ];
     }
 
-    private function getNotificationsData($limit = 5)
+    public function getNotificationsData($limit = 5)
     {
         // دریافت 5 فعالیت آخر از نوع‌هایی که برای ما مهم هستند
         $activities = Activity::query()
@@ -404,35 +404,58 @@ class HomeController extends Controller
         });
     }
 
-    private function getChatData($limit = 20) // افزایش محدودیت برای دیدن تاریخچه بیشتر
+    public function getChatData()
     {
         $adminUserId = auth()->id();
 
-        // تمام پیام‌ها را واکشی می‌کنیم، چه فرستنده کاربر باشد چه ادمین
-        $messages = ChatMessage::query()
-            ->with('user') // برای دسترسی به نام و اطلاعات فرستنده
+        // ۱. تمام پیام‌های اخیر را واکشی می‌کنیم
+        $allMessages = ChatMessage::query()
+            ->with('user', 'recipient')
             ->latest()
-            ->limit($limit)
-            ->get()
-            ->reverse() // برعکس کردن ترتیب برای نمایش صحیح (قدیمی‌ها بالا، جدیدها پایین)
-            ->values();
+            ->limit(100) // تعداد بیشتری پیام می‌گیریم تا مکالمات بیشتری را پوشش دهیم
+            ->get();
 
-        return $messages->map(function (ChatMessage $message) use ($adminUserId) {
-            if (!$message->user) {
-                return null; 
-            }
+        // ۲. پیام‌ها را بر اساس شناسه کاربر (غیر ادمین) گروه‌بندی می‌کنیم
+        $conversations = $allMessages->groupBy(function ($message) use ($adminUserId) {
+            // شناسه مکالمه، همیشه ID کاربری است که ادمین نیست.
+            return $message->user_id === $adminUserId ? $message->recipient_id : $message->user_id;
+        });
+
+        // ۳. هر گروه (مکالمه) را به فرمت مورد نیاز فرانت‌اند تبدیل می‌کنیم
+        $formattedConversations = $conversations->map(function ($messages, $userId) use ($adminUserId) {
+            if (!$userId) return null; // نادیده گرفتن پیام‌های بدون کاربر
+
+            $user = $messages->first(fn($m) => $m->user_id == $userId)->user ?? null;
+            if (!$user) return null;
 
             return [
-                'id' => $message->id,
-                'text' => $message->message,
-                // **منطق کلیدی:** اگر ID فرستنده پیام با ID ادمین فعلی یکی باشد، is_sender=true است
-                'is_sender' => $message->user_id === $adminUserId,
                 'user' => [
-                    'id' => $message->user->id,
-                    'name' => $message->user->name,
-                    'avatar' => 'https://ui-avatars.com/api/?name=' . urlencode($message->user->name) . '&background=random&color=fff'
-                ]
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'avatar' => 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=random&color=fff'
+                ],
+                'last_message' => $messages->first()->message,
+                'last_message_time' => $messages->first()->created_at->diffForHumans(),
+                // **افزودن وضعیت خوانده نشده**
+                'unread_count' => $messages->whereNull('read_at')->where('user_id', '!=', $adminUserId)->count(),
+                'messages' => $messages->map(function ($message) use ($adminUserId) {
+                    return [
+                        'id' => $message->id,
+                        'text' => $message->message,
+                        'is_sender' => $message->user_id === $adminUserId,
+                        'user' => [
+                            'id' => $message->user->id,
+                            'name' => $message->user->name,
+                            'avatar' => 'https://ui-avatars.com/api/?name=' . urlencode($message->user->name) . '&background=random&color=fff'
+                        ]
+                    ];
+                })->reverse()->values() // پیام‌ها را برای نمایش مرتب می‌کنیم
             ];
-        })->filter(); // حذف هر پیامی که به هر دلیلی کاربر ندارد
+        })->filter()->sortByDesc(function ($convo) {
+            // مکالمات را بر اساس زمان آخرین پیام مرتب می‌کنیم
+            return $convo['messages']->last()->id ?? 0;
+        })->values();
+
+        return $formattedConversations;
     }
 }

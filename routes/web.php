@@ -127,6 +127,13 @@ Route::prefix('/dashboard')->group(function(){
     // chats
     Route::get('/chat/messages', [\App\Http\Controllers\Admin\ChatController::class, 'fetchMessages'])->name('dashboard.chat.fetch');
     Route::post('/chat/messages', [\App\Http\Controllers\Admin\ChatController::class, 'sendMessage'])->name('dashboard.chat.send');
+    Route::post('/chat/mark-as-read/{user}', [\App\Http\Controllers\Admin\ChatController::class, 'markAsRead'])->name('dashboard.chat.markAsRead');
+
+    // روت جدید برای علامت‌گذاری نوتیفیکیشن‌ها به عنوان خوانده شده
+    Route::post('/notifications/mark-as-read', function() {
+        auth()->user()->unreadNotifications->markAsRead();
+        return response()->noContent();
+    })->name('dashboard.notifications.markAsRead');
 });
 
 

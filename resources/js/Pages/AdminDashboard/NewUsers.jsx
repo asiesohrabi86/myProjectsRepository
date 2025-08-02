@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { router } from '@inertiajs/react';
-import WidgetSkeleton from '@/Components/WidgetSkeleton'; // استفاده از اسکلت عمومی
+import WidgetSkeleton from '@/Components/WidgetSkeleton';
 
 const NewUsers = ({ newUsersDataProp }) => {
+    // منطق واکشی داده و مدیریت state (کاملاً بدون تغییر)
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
-    const [activeTab, setActiveTab] = useState('month'); // تب پیش‌فرض "ماه"
+    const [activeTab, setActiveTab] = useState('month');
 
     useEffect(() => {
         if (newUsersDataProp) {
@@ -27,12 +28,13 @@ const NewUsers = ({ newUsersDataProp }) => {
     }, [newUsersDataProp]);
 
     if (loading) {
-        return <WidgetSkeleton />;
+        // برای حفظ چیدمان، اسکلت لودینگ هم باید ارتفاع ثابت داشته باشد
+        return <div style={{ height: '550px' }}><WidgetSkeleton /></div>;
     }
 
     if (error) {
         return (
-            <div className="card full-height">
+            <div className="card full-height" style={{ height: '550px' }}>
                 <div className="card-body text-center text-danger">
                     <p>{error}</p>
                 </div>
@@ -45,7 +47,7 @@ const NewUsers = ({ newUsersDataProp }) => {
     const usersToShow = data[activeTab] || [];
 
     return (
-        <div className="card bg-boxshadow full-height d-flex flex-column">
+        <div className="card bg-boxshadow full-height d-flex flex-column" style={{ height: '550px' }}>
             <div className="card-header bg-transparent user-area d-flex align-items-center justify-content-between">
                 <h5 className="card-title mb-0">کاربران جدید</h5>
                 <ul className="nav total-earnings nav-tabs mb-0" role="tablist">
@@ -57,8 +59,8 @@ const NewUsers = ({ newUsersDataProp }) => {
                     </li>
                 </ul>
             </div>
-            {/* *** شروع بخش استایل‌دهی و اسکرول *** */}
-            <div className="card-body" style={{ flex: '1 1 auto', overflowY: 'auto', minHeight: '300px' }}>
+            {/* استایل flex و overflowY را به card-body اضافه می‌کنیم */}
+            <div className="card-body" style={{ flex: '1 1 auto', overflowY: 'auto' }}>
                 {usersToShow.length > 0 ? (
                     <ul className="list-unstyled mb-0">
                         {usersToShow.map((user, index) => (
@@ -77,12 +79,12 @@ const NewUsers = ({ newUsersDataProp }) => {
                         ))}
                     </ul>
                 ) : (
-                    <div className="text-center text-muted mt-4">
+                    // برای حفظ چیدمان عمودی، این بخش را داخل یک کانتینر flex قرار می‌دهیم
+                    <div className="d-flex align-items-center justify-content-center h-100 text-muted mt-4">
                         <p>کاربر جدیدی برای نمایش در این بازه زمانی وجود ندارد.</p>
                     </div>
                 )}
             </div>
-            {/* *** پایان بخش استایل‌دهی و اسکرول *** */}
         </div>
     );
 };

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Basket;
 use App\Models\Order;
+use App\Models\User;
 use App\Models\OrderItem;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
@@ -14,6 +15,8 @@ use Shetabit\Payment\Facade\Payment;
 use Exception;
 use Shetabit\Multipay\Exceptions\InvalidPaymentException;
 use SoapFault;
+use App\Notifications\GeneralNotification;
+use Illuminate\Support\Facades\Notification;
 
 class PurchaseController extends Controller
 {
@@ -124,11 +127,14 @@ class PurchaseController extends Controller
             $basket->carts()->delete();
             // ریدایرکت به لیست سفارش‌ها با پیام موفقیت
             $orders = Order::where(['user_id' => auth()->user()->id, 'isActive' => 1])->get();
-            // لاگ کردن فعالیت
-            activity('new_order')
-                ->performedOn($transaction->basket->orders()->first()) // مدل مرتبط: سفارش
-                ->causedBy($transaction->user) // کاربری که باعث این رویداد شد
-                ->log("سفارش جدیدی به مبلغ " . number_format($transaction->paid) . " تومان ثبت شد.");
+            // برای ارسال نوتیف به همه ادمین ها
+            $admins = User::where('is_admin', true)->get();
+            $notificationData = [
+                'text' => "سفارش جدیدی به مبلغ " . number_format($transaction->paid) . " تومان ثبت شد.",
+                'icon' => 'fa-user-plus text-info',
+                'url' => route('users.show', $user->id) // یک لینک به پروفایل کاربر
+            ];
+            Notification::send($admins, new GeneralNotification($notificationData));
             return redirect()->route('profile.orders', compact('orders'))->with('success', 'پرداخت با موفقیت انجام شد و سفارش شما ثبت شد.');
         }catch(Exception|InvalidPaymentException $e){
             if($e->getCode()<0){

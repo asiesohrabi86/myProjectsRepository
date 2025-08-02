@@ -5,7 +5,11 @@ namespace App\Http\Middleware;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use Illuminate\Support\Facades\Auth;
-use Tightenco\Ziggy\Ziggy; // <-- ایمپورت Ziggy
+use Tightenco\Ziggy\Ziggy;
+// ایمپورت مدل‌های لازم
+use App\Models\ChatMessage;
+use App\Models\User;
+use Spatie\Activitylog\Models\Activity;
 
 class HandleInertiaRequests extends Middleware
 {
@@ -14,7 +18,7 @@ class HandleInertiaRequests extends Middleware
      *
      * @var string
      */
-    protected $rootView = 'inertia'; // این باید نام فایل Blade اصلی شما باشد که اینرشیا را بوت‌استرپ می‌کند
+    protected $rootView = 'inertia';
 
     /**
      * Determine the current asset version.
@@ -31,7 +35,34 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        // ساختار داده منوی سایدبار بر اساس فایل Blade شما
+        return array_merge(parent::share($request), [
+            'auth' => fn() => [
+                'user' => $request->user() ? [
+                    'id' => $request->user()->id,
+                    'name' => $request->user()->name,
+                    'email' => $request->user()->email,
+                    'avatar' => 'https://ui-avatars.com/api/?name=' . urlencode($request->user()->name) . '&background=random&color=fff',
+                ] : null,
+            ],
+            'ziggy' => fn () => [
+                ...(new Ziggy)->toArray(),
+                'location' => $request->url(),
+            ],
+            // تمام داده‌های لازم به صورت lazy-loaded به اشتراک گذاشته می‌شوند
+            'sidebarMenu' => fn() => $this->getSidebarMenu(),
+            'headerNotifications' => fn() => $this->getNotificationsData(5),
+            'headerConversations' => fn() => $this->getUnreadConversations(),
+            // **اطمینان از وجود پراپ‌ها حتی در اولین لود**
+            'flash' => [
+                'success' => fn () => $request->session()->get('success'),
+            ],
+        ]);
+    }
+
+    // --- توابع کمکی برای تمیز نگه داشتن کد ---
+
+    protected function getSidebarMenu(): array
+    {
         $sidebarMenu = [
             [
                 'title' => 'داشبورد',
@@ -103,7 +134,7 @@ class HandleInertiaRequests extends Middleware
                 'title' => 'مدیریت ویژگی ها',
                 'icon' => 'zmdi zmdi-tag-more',
                 'permission' => null,
-                'active' => ['attributes.index'], // روت تاییدنشده شما در اینجا اشتباه بود
+                'active' => ['attributes.index'],
                 'children' => [
                     ['title' => 'لیست ویژگی ها', 'url' => route('attributes.index'), 'active' => 'attributes.index'],
                 ],
@@ -120,31 +151,63 @@ class HandleInertiaRequests extends Middleware
             ],
         ];
 
-        return array_merge(parent::share($request), [
-            'auth' => function () use ($request) {
-                if (!$request->user()) {
-                    return null;
-                }
-                // شما فقط باید پرمیشن‌های کاربر را بفرستید، نه کل آبجکت کاربر
-                return [
-                    'user' => [
-                        'id' => $request->user()->id,
-                        'name' => $request->user()->name,
-                        'email' => $request->user()->email,
-                        // ... سایر اطلاعات لازم
-                    ],
-                ];
-            },
-            'ziggy' => fn () => [ // اشتراک‌گذاری Ziggy برای استفاده از تابع route() در ری‌اکت
-                ...(new Ziggy)->toArray(),
-                'location' => $request->url(),
-            ],
-            'sidebarMenu' => function () use ($sidebarMenu) {
-                // فیلتر کردن منو بر اساس سطح دسترسی کاربر
-                return collect($sidebarMenu)->filter(function ($item) {
-                    return $item['permission'] === null || (Auth::user() && Auth::user()->can($item['permission']));
-                })->values()->all();
-            },
-        ]);
+        if (!Auth::check()) {
+            return [];
+        }
+
+        return collect($sidebarMenu)->filter(function ($item) {
+            return empty($item['permission']) || Auth::user()->can($item['permission']);
+        })->values()->all();
+    }
+
+    protected function getUnreadConversations(): \Illuminate\Support\Collection
+    {
+        if (!Auth::check()) {
+            return collect();
+        }
+        
+        $adminUserId = Auth::id();
+
+        // فقط پیام‌های خوانده نشده که توسط کاربران ارسال شده را واکشی می‌کنیم
+        $unreadMessages = ChatMessage::query()
+            ->whereNull('read_at')
+            ->where('recipient_id', $adminUserId) // پیام‌هایی که برای ادمین ارسال شده
+            ->with('user')
+            ->latest()
+            ->get();
+        
+        // آن‌ها را بر اساس فرستنده گروه‌بندی می‌کنیم
+        $conversations = $unreadMessages->groupBy('user_id');
+
+        return $conversations->map(function ($messages, $userId) {
+            $user = $messages->first()->user;
+            if (!$user) return null;
+
+            return [
+                'user' => [ 
+                    'id' => $user->id, 
+                    'name' => $user->name, 
+                    'avatar' => 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=random&color=fff'
+                ],
+                'last_message' => $messages->first()->message,
+                'unread_count' => $messages->count(),
+            ];
+        })->filter()->values();
+    }
+
+    protected function getNotificationsData($limit = 5)
+    {
+        if (!Auth::check()) return collect();
+        
+        // **استفاده از سیستم نوتیفیکیشن لاراول**
+        return Auth::user()->unreadNotifications()->limit($limit)->get()->map(function ($notification) {
+            return [
+                'id' => $notification->id,
+                'text' => $notification->data['text'] ?? 'اطلاعیه جدید',
+                'icon' => $notification->data['icon'] ?? 'fa-bell',
+                'time' => $notification->created_at->diffForHumans(),
+                'url' => $notification->data['url'] ?? '#',
+            ];
+        });
     }
 }

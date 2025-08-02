@@ -18,6 +18,7 @@ class CreateChatMessagesTable extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade'); // ID فرستنده پیام
             $table->foreignId('recipient_id')->nullable()->constrained('users')->onDelete('cascade'); // ID گیرنده پیام (می‌تواند null باشد برای پیام‌های عمومی)
             $table->text('message');
+            $table->timestamp('read_at')->nullable();
             $table->timestamps();
         });
     }

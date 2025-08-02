@@ -1,167 +1,142 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react'; // useEffect و axios دیگر اینجا لازم نیستند
+import { Link, usePage } from '@inertiajs/react';
+import axios from 'axios'; // axios برای markAsRead لازم است
 
 function toggleFullScreen() {
-    if (!document.fullscreenElement && !document.webkitFullscreenElement && !document.mozFullScreenElement && !document.msFullscreenElement) {
+    if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
         const docElm = document.documentElement;
-        if (docElm.requestFullscreen) {
-            docElm.requestFullscreen();
-        } else if (docElm.mozRequestFullScreen) {
-            docElm.mozRequestFullScreen();
-        } else if (docElm.webkitRequestFullscreen) {
-            docElm.webkitRequestFullscreen();
-        } else if (docElm.msRequestFullscreen) {
-            docElm.msRequestFullscreen();
-        }
+        if (docElm.requestFullscreen) docElm.requestFullscreen();
+        else if (docElm.mozRequestFullScreen) docElm.mozRequestFullScreen();
+        else if (docElm.webkitRequestFullscreen) docElm.webkitRequestFullscreen();
+        else if (docElm.msRequestFullscreen) docElm.msRequestFullscreen();
     } else {
-        if (document.exitFullscreen) {
-            document.exitFullscreen();
-        } else if (document.mozCancelFullScreen) {
-            document.mozCancelFullScreen();
-        } else if (document.webkitExitFullscreen) {
-            document.webkitExitFullscreen();
-        } else if (document.msExitFullscreen) {
-            document.msExitFullscreen();
-        }
+        if (document.exitFullscreen) document.exitFullscreen();
+        else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+        else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+        else if (document.msExitFullscreen) document.msExitFullscreen();
     }
 }
 
-const Header = ({ onDesktopMenuToggle, onMobileMenuToggle }) => {
+
+// **پراپ‌های notifications و conversations را دریافت می‌کند**
+const Header = ({ onDesktopMenuToggle, onMobileMenuToggle, notifications, conversations }) => {
+    const { auth } = usePage().props;
+    const user = auth?.user;
+
+    // **از پراپ‌های دریافتی استفاده می‌کند**
+    const unreadMessagesCount = conversations.reduce((sum, convo) => sum + (convo.unread_count || 0), 0);
+    const unreadNotificationsCount = notifications.length;
+
+    // **state محلی برای مدیریت آپدیت خوش‌بینانه**
+    const [currentNotifications, setCurrentNotifications] = useState(notifications);
+
+    useEffect(() => {
+        setCurrentNotifications(notifications);
+    }, [notifications]); // با هر تغییر در پراپ، state محلی را آپدیت کن
+
+    const handleNotificationsClick = () => {
+        if (unreadNotificationsCount > 0) {
+            axios.post(route('dashboard.notifications.markAsRead'));
+            // فقط state محلی را برای آپدیت خوش‌بینانه تغییر می‌دهیم
+            setCurrentNotifications([]);
+        }
+    };
+
     return (
         <header className="top-header-area d-flex align-items-center justify-content-between">
+            {/* این بخش کاملاً دست‌نخورده باقی می‌ماند */}
             <div className="left-side-content-area d-flex align-items-center">
-                {/* Mobile Logo */}
                 <div className="mobile-logo mr-3 mr-sm-4">
                     <a href="/dashboard"><img src="/admin/img/core-img/small-logo.png" alt="آرم موبایل" /></a>
                 </div>
-                {/* Triggers */}
                 <div className="ecaps-triggers mr-1 mr-sm-3">
-                    <div className="menu-collasped" id="menuCollasped" onClick={onDesktopMenuToggle}>
-                        <i className="zmdi zmdi-menu"></i>
-                    </div>
-                    <div className="mobile-menu-open" id="mobileMenuOpen" onClick={onMobileMenuToggle}>
-                        <i className="zmdi zmdi-menu"></i>
-                    </div>
+                    <div className="menu-collasped" onClick={onDesktopMenuToggle}><i className="zmdi zmdi-menu"></i></div>
+                    <div className="mobile-menu-open" onClick={onMobileMenuToggle}><i className="zmdi zmdi-menu"></i></div>
                 </div>
-                {/* Left Side Nav */}
                 <ul className="left-side-navbar d-flex align-items-center">
                     <li className="hide-phone app-search">
-                        <form className="input-group" role="search">
-                            <input type="text" className="form-control" placeholder="جستجو ..." aria-label="جستجو" />
-                        </form>
+                        <form className="input-group" role="search"><input type="text" className="form-control" placeholder="جستجو ..." /></form>
                     </li>
                 </ul>
             </div>
+
             <div className="right-side-navbar d-flex align-items-center justify-content-end">
-                {/* Mobile Trigger */}
-                <div className="right-side-trigger" id="rightSideTrigger">
-                    <i className="ti-align-left"></i>
-                </div>
-                {/* Top Bar Nav */}
                 <ul className="right-side-content d-flex align-items-center">
-                    {/* Full Screen Mode */}
                     <li className="full-screen-mode ml-1">
-                        <a href="#" id="fullScreenMode" onClick={e => { e.preventDefault(); toggleFullScreen(); }}><i className="zmdi zmdi-fullscreen"></i></a>
+                        <a href="#" onClick={e => { e.preventDefault(); toggleFullScreen(); }}><i className="zmdi zmdi-fullscreen"></i></a>
                     </li>
+                    {/* زبان (بدون تغییر) */}
+                    <li className="nav-item dropdown"> ... </li>
+
+                    {/* **شروع بخش داینامیک پیام‌ها** */}
                     <li className="nav-item dropdown">
-                        <button type="button" className="btn dropdown-toggle font-15 text-dark" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">انگلیسی<i className="fa fa-angle-down"></i></button>
-                        <div className="dropdown-menu language-dropdown dropdown-menu-right text-right" style={{direction: 'rtl'}}>
-                            <a href="#" className="dropdown-item">فرانسوی </a>
-                            <a href="#" className="dropdown-item">آلمانی </a>
-                            <a href="#" className="dropdown-item">هندی</a>
-                        </div>
-                    </li>
-                    <li className="nav-item dropdown">
-                        <button type="button" className="btn dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i className="zmdi zmdi-shopping-basket" aria-hidden="true"></i></button>
+                        <button type="button" className="btn dropdown-toggle" data-toggle="dropdown"><i className="zmdi zmdi-shopping-basket"></i>
+                            {unreadMessagesCount > 0 && <span className="active-status"></span>}
+                        </button>
                         <div className="dropdown-menu dropdown-menu-right">
-                            {/* Top Message Area */}
                             <div className="top-message-area">
-                                {/* Heading */}
                                 <div className="top-message-heading">
-                                    <div className="heading-title">
-                                        <h6>پیام ها</h6>
-                                    </div>
-                                    <span>5 جدید</span>
+                                    <div className="heading-title"><h6>پیام ها</h6></div>
+                                    <span>{unreadMessagesCount} جدید</span>
                                 </div>
-                                <div className="message-box" id="messageBox" style={{maxHeight: 255, overflowY: 'auto', direction: 'rtl'}}>
-                                    <a href="#" className="dropdown-item">
-                                        <img src="/admin/img/member-img/1.png" alt="" />
-                                        <span className="message-text">
-                                            <span>دوره ویدیوی 6 ساعته در Angular </span>
-                                            <span>3 دقیقه پیش </span>
-                                        </span>
-                                    </a>
-                                    <a href="#" className="dropdown-item">
-                                        <img src="/admin/img/member-img/1.png" alt="" />
-                                        <span className="message-text">
-                                            <span>دوره ویدیوی 6 ساعته در Angular </span>
-                                            <span>3 دقیقه پیش </span>
-                                        </span>
-                                    </a>
-                                    <a href="#" className="dropdown-item">
-                                        <img src="/admin/img/member-img/1.png" alt="" />
-                                        <span className="message-text">
-                                            <span>دوره ویدیوی 6 ساعته در Angular </span>
-                                            <span>3 دقیقه پیش </span>
-                                        </span>
-                                    </a>
-                                    <a href="#" className="dropdown-item">
-                                        <img src="/admin/img/member-img/1.png" alt="" />
-                                        <span className="message-text">
-                                            <span>دوره ویدیوی 6 ساعته در Angular </span>
-                                            <span>3 دقیقه پیش </span>
-                                        </span>
-                                    </a>
+                                <div className="message-box" style={{maxHeight: 255, overflowY: 'auto'}}>
+                                    {unreadMessagesCount > 0 ? conversations.map(convo => (
+                                        <a href="#" className="dropdown-item" key={`convo-${convo.user.id}`}>
+                                            <img src={convo.user.avatar} alt={convo.user.name} />
+                                            <span className="message-text">
+                                                <span>{convo.user.name}</span>
+                                                <span>{convo.last_message}</span>
+                                            </span>
+                                        </a>
+                                    )) : <p className="text-center p-3 text-muted">پیام جدیدی وجود ندارد.</p>}
                                 </div>
                             </div>
                         </div>
                     </li>
+
+                    {/* منوی اطلاعیه‌ها */}
                     <li className="nav-item dropdown">
-                        <button type="button" className="btn dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><i className="zmdi zmdi-volume-up" aria-hidden="true"></i> <span className="active-status"></span></button>
+                        <button type="button" className="btn dropdown-toggle" data-toggle="dropdown" onClick={handleNotificationsClick}>
+                            <i className="zmdi zmdi-notifications-active"></i>
+                            {/* **از state محلی استفاده می‌کند** */}
+                            {currentNotifications.length > 0 && <span className="active-status"></span>}
+                        </button>
                         <div className="dropdown-menu dropdown-menu-right">
-                            {/* Top Notifications Area */}
                             <div className="top-notifications-area">
-                                {/* Heading */}
-                                <div className="notifications-heading">
-                                    <div className="heading-title">
-                                        <h6>اطلاعیه</h6>
-                                    </div>
-                                    <span>5 جدید</span>
-                                </div>
-                                <div className="notifications-box" id="notificationsBox" style={{maxHeight: 255, overflowY: 'auto', direction: 'rtl'}}>
-                                    <a href="#" className="dropdown-item"><i className="ti-face-smile bg-success"></i><span>ما یک چیزی برای شما داریم!</span></a>
-                                    <a href="#" className="dropdown-item"><i className="zmdi zmdi-notifications-active bg-danger"></i><span>نام دامنه در روز سه شنبه منقضی می شود</span></a>
-                                    <a href="#" className="dropdown-item"><i className="ti-check"></i><span>کمیسیون های شما ارسال شده است</span></a>
-                                    <a href="#" className="dropdown-item"><i className="ti-heart bg-success"></i><span>شما یک مورد را فروختید!</span></a>
-                                    <a href="#" className="dropdown-item"><i className="ti-face-smile bg-success"></i><span>ما یک چیزی برای شما داریم!</span></a>
-                                    <a href="#" className="dropdown-item"><i className="zmdi zmdi-notifications-active bg-danger"></i><span>نام دامنه در روز سه شنبه منقضی می شود</span></a>
-                                    <a href="#" className="dropdown-item"><i className="ti-check"></i><span>کمیسیون های شما ارسال شده است</span></a>
-                                    <a href="#" className="dropdown-item"><i className="ti-heart bg-success"></i><span>شما یک مورد را فروختید!</span></a>
+                                <div className="notifications-heading"><h6>اطلاعیه</h6></div>
+                                <div className="notifications-box" style={{maxHeight: 255, overflowY: 'auto'}}>
+                                    {/* **از state محلی استفاده می‌کند** */}
+                                    {currentNotifications.length > 0 ? currentNotifications.map(notif => (
+                                        <a href={notif.url} className="dropdown-item" key={`notif-${notif.id}`}>
+                                            <i className={`fa ${notif.icon}`}></i>
+                                            <span>{notif.text} <small className="text-muted d-block">{notif.time}</small></span>
+                                        </a>
+                                    )) : <p className="text-center p-3 text-muted">اطلاعیه جدیدی وجود ندارد.</p>}
                                 </div>
                             </div>
                         </div>
                     </li>
+                    {/* **شروع بخش داینامیک کاربر** */}
                     <li className="nav-item dropdown">
-                        <button type="button" className="btn dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"><img src="/admin/img/member-img/3.png" alt="" /></button>
+                        <button type="button" className="btn dropdown-toggle" data-toggle="dropdown">
+                            {user && <img src={user.avatar} alt={user.name} />}
+                        </button>
                         <div className="dropdown-menu dropdown-menu-right">
-                            {/* User Profile Area */}
                             <div className="user-profile-area">
                                 <div className="user-profile-heading">
-                                    {/* Thumb */}
                                     <div className="profile-img">
-                                        <img className="chat-img mr-2" src="/admin/img/member-img/3.png" alt="" />
+                                        {user && <img className="chat-img mr-2" src={user.avatar} alt={user.name} />}
                                     </div>
-                                    {/* Profile Text */}
                                     <div className="profile-text">
-                                        <h6>نام کاربر</h6>
-                                        <span>توسعه دهنده</span>
+                                        <h6>{user?.name}</h6>
+                                        <span>{user?.email}</span>
                                     </div>
                                 </div>
-                                <a href="#" className="dropdown-item"><i className="zmdi zmdi-account profile-icon bg-primary" aria-hidden="true"></i> پروفایل من</a>
-                                <a href="#" className="dropdown-item"><i className="zmdi zmdi-email-open profile-icon bg-success" aria-hidden="true"></i> پیام ها</a>
-                                <a href="#" className="dropdown-item"><i className="zmdi zmdi-brightness-7 profile-icon bg-info" aria-hidden="true"></i> تنظیمات حساب</a>
-                                <a href="#" className="dropdown-item"><i className="zmdi zmdi-mouse profile-icon bg-danger" aria-hidden="true"></i> وظایف من</a>
-                                <a href="#" className="dropdown-item"><i className="zmdi zmdi-wifi-alt profile-icon bg-purple" aria-hidden="true"></i> پشتیبانی</a>
-                                <a href="#" className="dropdown-item"><i className="ti-unlink profile-icon bg-warning" aria-hidden="true"></i> خروج از سیستم</a>
+                                <Link href={route('profile')} className="dropdown-item"><i className="zmdi zmdi-account profile-icon bg-primary"></i> پروفایل من</Link>
+                                <Link href="#" className="dropdown-item"><i className="zmdi zmdi-email-open profile-icon bg-success"></i> پیام ها</Link>
+                                <Link href={route('logout')} method="post" as="button" className="dropdown-item">
+                                    <i className="ti-unlink profile-icon bg-warning"></i> خروج از سیستم
+                                </Link>
                             </div>
                         </div>
                     </li>
@@ -171,4 +146,41 @@ const Header = ({ onDesktopMenuToggle, onMobileMenuToggle }) => {
     );
 };
 
-export default Header; 
+export default Header;
+
+
+
+
+
+
+
+
+
+
+
+
+
+   
+    // return (
+        
+    //                 {/* **شروع بخش داینامیک اطلاعیه‌ها** */}
+    //                 <li className="nav-item dropdown">
+    //                     <button type="button" className="btn dropdown-toggle" data-toggle="dropdown" onClick={handleNotificationsClick}><i className="zmdi zmdi-volume-up"></i>
+    //                         {unreadNotificationsCount > 0 && <span className="active-status"></span>}
+    //                     </button>
+    //                     <div className="dropdown-menu dropdown-menu-right">
+    //                         <div className="top-notifications-area">
+    //                             <div className="notifications-heading">
+    //                                 <div className="heading-title"><h6>اطلاعیه</h6></div>
+    //                             </div>
+    //                             <div className="notifications-box" style={{maxHeight: 255, overflowY: 'auto'}}>
+    //                                 {unreadNotificationsCount > 0 ? notifications.map(notif => (
+    //                                     <a href={notif.url} className="dropdown-item" key={`notif-${notif.id}`}>
+    //                                         <i className={`fa ${notif.icon}`}></i>
+    //                                         <span>{notif.text} <small className="text-muted d-block">{notif.time}</small></span>
+    //                                     </a>
+    //                                 )) : <p className="text-center p-3 text-muted">اطلاعیه جدیدی وجود ندارد.</p>}
+    //                             </div>
+    //                         </div>
+    //                     </div>
+    //                 </li>

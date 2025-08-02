@@ -9,6 +9,8 @@ use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use App\Rules\Recaptcha;
+use App\Notifications\GeneralNotification;
+use Illuminate\Support\Facades\Notification;
 
 class RegisterController extends Controller
 {
@@ -71,10 +73,14 @@ class RegisterController extends Controller
             'email' => $data['email'],
             'password' => Hash::make($data['password']),
         ]);
-        // لاگ کردن فعالیت
-        activity('new_user')
-            ->performedOn($user)
-            ->log("کاربر جدیدی با نام {$user->name} ثبت‌نام کرد.");
+
+        $admins = User::where('is_admin', true)->get();
+        $notificationData = [
+            'text' => "کاربر جدیدی با نام {$user->name} ثبت‌نام کرد.",
+            'icon' => 'fa-user-plus text-info',
+            'url' => route('users.show', $user->id) // یک لینک به پروفایل کاربر
+        ];
+        Notification::send($admins, new GeneralNotification($notificationData));
 
         return $user;
         }
