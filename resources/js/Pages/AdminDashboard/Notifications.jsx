@@ -1,86 +1,77 @@
 import React, { useState, useEffect } from 'react';
-import { router } from '@inertiajs/react';
+import { usePage, router, Link } from '@inertiajs/react'; 
 import WidgetSkeleton from '@/Components/WidgetSkeleton';
 
-const Notifications = ({ notificationsDataProp }) => {
-    // این بخش منطق واکشی داده است و دست‌نخورده باقی می‌ماند
-    const [data, setData] = useState(null);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
+const Notifications = () => {
+    // از usePage برای دسترسی مستقیم به پراپ‌ها استفاده می‌کنیم
+    const { props } = usePage();
+    // در بارگذاری اولیه، state را با داده‌های دریافتی از سرور پر می‌کنیم
+    const [notifications, setNotifications] = useState(() => props.notifications || []);
+    const [loading, setLoading] = useState(false); // لودینگ فقط برای reload
 
+    // افکت برای آپدیت کردن state وقتی پراپ‌ها بعد از یک درخواست اینرشیا تغییر می‌کنند
     useEffect(() => {
-        if (notificationsDataProp) {
-            setData(notificationsDataProp);
-            return;
-        }
+        setNotifications(props.notifications || []);
+    }, [props.notifications]);
+    
+    // این کامپوننت دیگر نیازی به واکشی اولیه ندارد چون داده‌ها با صفحه لود می‌شوند.
+    const refreshNotifications = () => {
         setLoading(true);
-        setError(null);
-        router.reload({
-            only: ['notificationsData'],
-            onSuccess: (page) => setData(page.props.notificationsData),
-            onError: (errors) => {
-                console.error("Error fetching notifications:", errors);
-                setError('خطا در بارگذاری اطلاعیه‌ها.');
+        router.reload({ 
+            only: ['notifications'],
+            onSuccess: (page) => {
+                setNotifications(page.props.notifications || []);
             },
-            onFinish: () => setLoading(false),
+            onFinish: () => setLoading(false)
         });
-    }, [notificationsDataProp]);
+    };
 
+    // اگر در حین بازخوانی بودیم، اسکلت را نشان بده
     if (loading) {
         return <WidgetSkeleton />;
     }
 
-    if (error) {
-        return (
-            <div className="card full-height">
-                <div className="card-body text-center text-danger">
-                    <p>{error}</p>
-                </div>
-            </div>
-        );
-    }
-
-    if (!data || data.length === 0) {
-        return (
-            // برای این حالت هم ارتفاع ثابت را در نظر می‌گیریم تا چیدمان به هم نریزد
-            <div className="card full-height" style={{ height: '550px' }}>
-                <div className="card-header bg-transparent">
-                    <h5 className="card-title mb-0">اطلاعیه</h5>
-                </div>
-                <div className="card-body d-flex align-items-center justify-content-center text-muted">
-                    <p>اطلاعیه جدیدی برای نمایش وجود ندارد.</p>
-                </div>
-            </div>
-        );
-    }
-    
     return (
-        // ۱. به کارت اصلی ارتفاع ثابت و کلاس‌های Flexbox می‌دهیم
-        <div className="card full-height d-flex flex-column" style={{ height: '550px' }}>
-            <div className="card-header bg-transparent">
-                <h5 className="card-title mb-0">اطلاعیه</h5>
+        // به کارت اصلی ارتفاع ثابت و کلاس‌های Flexbox می‌دهیم
+        <div className="card full-height d-flex flex-column" style={{ minHeight: '550px' }}>
+            <div className="card-header bg-transparent d-flex justify-content-between align-items-center">
+                <h5 className="card-title mb-0">آخرین اطلاعیه‌ها</h5>
+                <button onClick={refreshNotifications} className="btn btn-sm btn-outline-secondary">
+                    <i className="fa fa-refresh"></i>
+                </button>
             </div>
-            {/* ۲. به card-body می‌گوییم فضای باقی‌مانده را پر کند و در صورت نیاز اسکرول بخورد */}
+            {/* به card-body می‌گوییم فضای باقی‌مانده را پر کند و در صورت نیاز اسکرول بخورد */}
             <div className="card-body" style={{ flex: '1 1 auto', overflowY: 'auto' }}>
                 <div className="row">
-                    {data.map((notification) => (
-                        <div className="col-12" key={notification.id}>
-                            <div className="single-widget-timeline mb-3">
-                                <div className="media">
-                                    <div className="mr-3 d-flex align-items-center"> {/* برای تراز عمودی بهتر */}
-                                        <i className={`fa ${notification.icon} font-20 text-muted`}></i>
-                                        <a href="#!" className="ml-3">
-                                            <img className="rounded-circle" style={{ width: 40, height: 40 }} src={notification.img} alt="آواتار" />
-                                        </a>
-                                    </div>
-                                    <div className="media-body">
-                                        <h6 className="d-inline-block" style={{ fontSize: '14px', marginBottom: '4px' }}>{notification.text}</h6>
-                                        <p className="mb-0 text-muted" style={{ fontSize: '12px' }}>{notification.time}</p>
+                    {notifications.length > 0 ? (
+                        notifications.map((notification) => (
+                            <div className="col-12" key={notification.id}>
+                                <div className="single-widget-timeline mb-3">
+                                    <div className="media">
+                                        <div className="mr-3 d-flex align-items-center">
+                                            {/* از آیکون ارسال شده از بک‌اند استفاده می‌کنیم */}
+                                            <i className={`fa ${notification.icon} font-24`}></i>
+                                        </div>
+                                        <div className="media-body">
+                                            {/* از کامپوننت Link اینرشیا برای لینک‌های داخلی استفاده می‌کنیم */}
+                                            <Link href={notification.url} className="d-block text-dark" style={{ textDecoration: 'none' }}>
+                                                <h6 className="d-inline-block" style={{ fontSize: '14px', marginBottom: '4px' }}>
+                                                    {notification.text}
+                                                </h6>
+                                            </Link>
+                                            <p className="mb-0 text-muted" style={{ fontSize: '12px' }}>
+                                                {notification.time}
+                                            </p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                        ))
+                    ) : (
+                        <div className="col-12 text-center text-muted mt-4">
+                            <p>اطلاعیه‌ای برای نمایش وجود ندارد.</p>
                         </div>
-                    ))}
+                    )}
                 </div>
             </div>
         </div>
@@ -88,3 +79,4 @@ const Notifications = ({ notificationsDataProp }) => {
 };
 
 export default Notifications;
+

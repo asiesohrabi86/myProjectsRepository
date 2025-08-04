@@ -34,7 +34,7 @@ class HomeController extends Controller
             // اضافه کردن داده محصولات برتر
             'topProducts' => fn() => $this->getTopProducts(),
             'newUsersData' => fn() => $this->getNewUsersData(),
-            'notificationsData' => fn() => $this->getNotificationsData(),
+            // 'notificationsData' => fn() => $this->getNotificationsData(),
             'chatData' => fn() => $this->getChatData(),
         ]);
     }
@@ -362,47 +362,47 @@ class HomeController extends Controller
         ];
     }
 
-    public function getNotificationsData($limit = 5)
-    {
-        // دریافت 5 فعالیت آخر از نوع‌هایی که برای ما مهم هستند
-        $activities = Activity::query()
-            ->whereIn('log_name', ['new_order', 'new_user', 'new_comment'])
-            ->latest() // جدیدترین‌ها در ابتدا
-            ->limit($limit)
-            ->get();
+    // public function getNotificationsData($limit = 5)
+    // {
+    //     // دریافت 5 فعالیت آخر از نوع‌هایی که برای ما مهم هستند
+    //     $activities = Activity::query()
+    //         ->whereIn('log_name', ['new_order', 'new_user', 'new_comment'])
+    //         ->latest() // جدیدترین‌ها در ابتدا
+    //         ->limit($limit)
+    //         ->get();
             
-        // تبدیل داده‌ها به فرمت مورد نیاز فرانت‌اند
-        return $activities->map(function (Activity $activity) {
-            // تعیین آیکون و تصویر بر اساس نوع نوتیفیکیشن
-            $icon = 'fa-bell'; // پیش‌فرض
-            $img = 'https://ui-avatars.com/api/?name=N&background=random&color=fff'; // پیش‌فرض
+    //     // تبدیل داده‌ها به فرمت مورد نیاز فرانت‌اند
+    //     return $activities->map(function (Activity $activity) {
+    //         // تعیین آیکون و تصویر بر اساس نوع نوتیفیکیشن
+    //         $icon = 'fa-bell'; // پیش‌فرض
+    //         $img = 'https://ui-avatars.com/api/?name=N&background=random&color=fff'; // پیش‌فرض
 
-            if ($activity->log_name === 'new_order') {
-                $icon = 'fa-shopping-cart text-success';
-                if ($activity->causer) {
-                    $img = 'https://ui-avatars.com/api/?name=' . urlencode($activity->causer->name) . '&background=4e73df&color=fff';
-                }
-            } elseif ($activity->log_name === 'new_user') {
-                $icon = 'fa-user-plus text-info';
-                if ($activity->subject) {
-                    $img = 'https://ui-avatars.com/api/?name=' . urlencode($activity->subject->name) . '&background=1cc88a&color=fff';
-                }
-            } elseif ($activity->log_name === 'new_comment') {
-                $icon = 'fa-comment text-warning';
-                if ($activity->causer) {
-                    $img = 'https://ui-avatars.com/api/?name=' . urlencode($activity->causer->name) . '&background=f6c23e&color=fff';
-                }
-            }
+    //         if ($activity->log_name === 'new_order') {
+    //             $icon = 'fa-shopping-cart text-success';
+    //             if ($activity->causer) {
+    //                 $img = 'https://ui-avatars.com/api/?name=' . urlencode($activity->causer->name) . '&background=4e73df&color=fff';
+    //             }
+    //         } elseif ($activity->log_name === 'new_user') {
+    //             $icon = 'fa-user-plus text-info';
+    //             if ($activity->subject) {
+    //                 $img = 'https://ui-avatars.com/api/?name=' . urlencode($activity->subject->name) . '&background=1cc88a&color=fff';
+    //             }
+    //         } elseif ($activity->log_name === 'new_comment') {
+    //             $icon = 'fa-comment text-warning';
+    //             if ($activity->causer) {
+    //                 $img = 'https://ui-avatars.com/api/?name=' . urlencode($activity->causer->name) . '&background=f6c23e&color=fff';
+    //             }
+    //         }
 
-            return [
-                'id' => $activity->id,
-                'icon' => $icon,
-                'img' => $img,
-                'text' => $activity->description,
-                'time' => $activity->created_at->diffForHumans(), // مثلا "۵ دقیقه پیش"
-            ];
-        });
-    }
+    //         return [
+    //             'id' => $activity->id,
+    //             'icon' => $icon,
+    //             'img' => $img,
+    //             'text' => $activity->description,
+    //             'time' => $activity->created_at->diffForHumans(), // مثلا "۵ دقیقه پیش"
+    //         ];
+    //     });
+    // }
 
     public function getChatData()
     {

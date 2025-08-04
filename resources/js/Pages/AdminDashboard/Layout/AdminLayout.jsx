@@ -1,73 +1,61 @@
 import React, { useState, useEffect } from 'react';
-import { usePage } from '@inertiajs/react';
+import { usePage, router } from '@inertiajs/react';
 import Sidebar from './Sidebar';
 import Header from './Header';
 
 export default function AdminLayout({ children }) {
     const { props } = usePage();
-    const user = props.auth?.user;
-
-    // State های داده‌های زنده در اینجا به عنوان "منبع حقیقت واحد" مدیریت می‌شوند
-    const [notifications, setNotifications] = useState(() => props.notifications || []);
-    const [conversations, setConversations] = useState(() => props.conversations || []);
+    const { auth, notifications, conversations } = props;
+    const user = auth?.user;
     
     // State های مربوط به UI (بدون تغییر)
     const [collapsed, setCollapsed] = useState(false);
     const [hovered, setHovered] = useState(false);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-    // افکت برای آپدیت کردن state ها از props (مثلاً بعد از ریدایرکت)
+        // **افکت نهایی و کامل برای راه‌اندازی Echo**
     useEffect(() => {
-        setNotifications(props.notifications || []);
-        setConversations(props.conversations || []);
-    }, [props.notifications, props.conversations]);
-
-    // افکت اصلی برای راه‌اندازی و گوش دادن به Echo
-    useEffect(() => {
+        // این افکت فقط زمانی اجرا می‌شود که آبجکت user وجود داشته باشد
         if (user && window.Echo) {
-            // ۱. گوش دادن به نوتیفیکیشن‌های جدید
+            
+            // --- ۱. راه‌اندازی کانال نوتیفیکیشن‌ها ---
             const userChannel = window.Echo.private(`App.Models.User.${user.id}`);
-            userChannel.notification((notification) => {
-                // با دریافت نوتیفیکیشن جدید، آن را به ابتدای لیست اضافه می‌کنیم
-                const newNotification = {
-                    id: notification.id,
-                    text: notification.text,
-                    icon: notification.icon,
-                    url: notification.url,
-                    time: notification.time,
-                };
-                setNotifications(prev => [newNotification, ...prev]);
-            });
-
-            // ۲. گوش دادن به پیام‌های جدید
-            const adminChannel = window.Echo.private('admin-chat');
-            adminChannel.listen('\\App\\Events\\MessageSentToAdmin', (e) => {
-                const newMessage = e.formattedMessage;
-                // آپدیت کردن لیست مکالمات خوانده نشده
-                setConversations(prev => {
-                    const existingConvoIndex = prev.findIndex(c => c.user.id === newMessage.user.id);
-                    let newConvos = [...prev];
-                    if (existingConvoIndex > -1) {
-                        newConvos[existingConvoIndex].last_message = newMessage.text;
-                        newConvos[existingConvoIndex].unread_count = (newConvos[existingConvoIndex].unread_count || 0) + 1;
-                    } else {
-                        newConvos = [{ user: newMessage.user, last_message: newMessage.text, unread_count: 1 }, ...newConvos];
-                    }
-                    return newConvos;
+            
+            // **استفاده از نام رویداد پیش‌فرض لاراول برای نوتیفیکیشن‌ها**
+            userChannel.listen('.Illuminate\\Notifications\\Events\\BroadcastNotificationCreated', (e) => {
+                console.log("New Laravel Notification Received:", e);
+                router.reload({ 
+                    only: ['notifications', 'conversations'],
+                    preserveState: true,
+                    preserveScroll: true
                 });
             });
 
-            // تابع پاک‌سازی برای جلوگیری از memory leak
+            // --- ۲. راه‌اندازی کانال چت ادمین ---
+            const adminChannel = window.Echo.private('admin-chat');
+            adminChannel.listen('\\App\\Events\\MessageSentToAdmin', (e) => {
+                console.log("New Chat Message Received:", e);
+                router.reload({
+                    only: ['notifications', 'conversations'],
+                    preserveState: true,
+                    preserveScroll: true
+                });
+            });
+
+            // --- ۳. تابع پاک‌سازی (بسیار مهم) ---
+            // این تابع زمانی اجرا می‌شود که کامپوننت unmount شود یا user تغییر کند.
+            // این کار از ثبت listener های تکراری و memory leak جلوگیری می‌کند.
             return () => {
                 userChannel.stopListening('.Illuminate\\Notifications\\Events\\BroadcastNotificationCreated');
                 window.Echo.leaveChannel(`App.Models.User.${user.id}`);
+
                 adminChannel.stopListening('\\App\\Events\\MessageSentToAdmin');
                 window.Echo.leaveChannel('admin-chat');
             };
         }
-    }, [user]); // این افکت فقط یک بار بعد از لاگین کاربر اجرا می‌شود
+    }, [user]); // وابستگی به user تضمین می‌کند که با تغییر کاربر، listener ها دوباره راه‌اندازی شوند.
     
-    // ... (تمام منطق مربوط به کلاس‌های wrapper و toggle منو بدون تغییر باقی می‌ماند) ...
+   
     let wrapperClass = 'ecaps-page-wrapper';
     if (mobileMenuOpen) wrapperClass += ' mobile-menu-active';
     if (collapsed) wrapperClass += ' menu-collasped-active';
@@ -111,7 +99,6 @@ export default function AdminLayout({ children }) {
                     onDesktopMenuToggle={handleDesktopMenuToggle}
                     onMobileMenuToggle={handleMobileMenuToggle}
                     notifications={notifications}
-                    setNotifications={setNotifications} // برای آپدیت خوش‌بینانه
                     conversations={conversations}
                 />
                 <main className="main-content">
@@ -125,105 +112,3 @@ export default function AdminLayout({ children }) {
         </div>
     );
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import React, { useState, useEffect } from 'react';
-// import { usePage } from '@inertiajs/react';
-// import Sidebar from './Sidebar';
-// import Header from './Header';
-
-// export default function AdminLayout({ children }) {
-//     const { props } = usePage();
-//     const { auth } = props;
-//     const user = auth?.user;
-
-//     // State های مربوط به داده‌های زنده در اینجا مدیریت می‌شوند
-//     const [notifications, setNotifications] = useState(() => props.headerNotifications || []);
-//     const [conversations, setConversations] = useState(() => props.headerConversations || []);
-    
-//     const [collapsed, setCollapsed] = useState(false); // برای باریک/پهن بودن سایدبار
-//     const [hovered, setHovered] = useState(false);    // برای هاور روی سایدبار
-//     const [mobileMenuOpen, setMobileMenuOpen] = useState(false); // برای موبایل
-
-//     // این افکت فقط یک بار اجرا شده و Echo را برای همیشه راه‌اندازی می‌کند
-//     useEffect(() => {
-//         if (user && window.Echo) {
-//             // ۱. گوش دادن به نوتیفیکیشن‌های جدید
-//             window.Echo.private(`App.Models.User.${user.id}`)
-//                 .notification((notification) => {
-//                     const newNotification = { /* ... فرمت کردن داده نوتیفیکیشن ... */ };
-//                     setNotifications(prev => [newNotification, ...prev]);
-//                 });
-
-//             // ۲. گوش دادن به پیام‌های جدید
-//             const adminChannel = window.Echo.private('admin-chat');
-//             adminChannel.listen('\\App\\Events\\MessageSentToAdmin', (e) => {
-//                 const newMessage = e.formattedMessage;
-//                 // آپدیت کردن لیست مکالمات خوانده نشده
-//                 setConversations(prev => {
-//                     // اگر مکالمه از قبل وجود داشت، آن را آپدیت کن
-//                     const existingConvoIndex = prev.findIndex(c => c.user.id === newMessage.user.id);
-//                     if (existingConvoIndex > -1) {
-//                         const updatedConvos = [...prev];
-//                         updatedConvos[existingConvoIndex].last_message = newMessage.text;
-//                         updatedConvos[existingConvoIndex].unread_count += 1;
-//                         return updatedConvos;
-//                     } else { // اگر مکالمه جدید بود، آن را اضافه کن
-//                         return [{ user: newMessage.user, last_message: newMessage.text, unread_count: 1 }, ...prev];
-//                     }
-//                 });
-//             });
-
-//             return () => {
-//                 window.Echo.leaveChannel(`App.Models.User.${user.id}`);
-//                 window.Echo.leaveChannel('admin-chat');
-//             };
-//         }
-//     }, [user]); // فقط زمانی اجرا شود که اطلاعات کاربر در دسترس باشد
-    
-   
-
-
-
-//     return (
-//         <div className={wrapperClass} style={{overflowX: 'hidden'}}>
-//             <Sidebar onMouseEnter={() => setHovered(true)}
-//             onMouseLeave={() => setHovered(false)}/>
-//             <div className="ecaps-page-content">
-//                 {/* داده‌های زنده را به عنوان پراپ به هدر پاس می‌دهیم */}
-//                 <Header 
-//                     onDesktopMenuToggle={() => setSidebarCollapsed(!isSidebarCollapsed)}
-//                     notifications={notifications}
-//                     setNotifications={setNotifications}
-//                     conversations={conversations}
-//                 />
-//                 <main className="main-content">
-//                     <div className="dashboard-area">
-//                       <div className="container-fluid" style={{overflowX: 'hidden'}}>
-//                         {children}
-//                       </div>
-//                     </div>
-//                 </main>
-//             </div>
-//         </div>
-//     );
-// }
-
-  

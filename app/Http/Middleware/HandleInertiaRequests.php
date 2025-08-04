@@ -20,13 +20,16 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         return array_merge(parent::share($request), [
+            // 'auth' => fn() => [
+            //     'user' => $request->user() ? [
+            //         'id' => $request->user()->id,
+            //         'name' => $request->user()->name,
+            //         'email' => $request->user()->email,
+            //         'avatar' => 'https://ui-avatars.com/api/?name=' . urlencode($request->user()->name) . '&background=random&color=fff',
+            //     ] : null,
+            // ],
             'auth' => fn() => [
-                'user' => $request->user() ? [
-                    'id' => $request->user()->id,
-                    'name' => $request->user()->name,
-                    'email' => $request->user()->email,
-                    'avatar' => 'https://ui-avatars.com/api/?name=' . urlencode($request->user()->name) . '&background=random&color=fff',
-                ] : null,
+                'user' => $this->getAuthUser(), // استفاده از تابع کمکی
             ],
             'ziggy' => fn () => [
                 ...(new Ziggy)->toArray(),
@@ -34,7 +37,7 @@ class HandleInertiaRequests extends Middleware
             ],
             // **اصلاحیه اصلی: پاس دادن request به توابع**
             'sidebarMenu' => fn() => $this->getSidebarMenu($request),
-            'notifications' => fn() => $this->getNotificationsData($request, 5),
+            'notifications' => fn() => $this->getNotificationsData(5),
             'conversations' => fn() => $this->getUnreadConversations($request),
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
@@ -44,6 +47,18 @@ class HandleInertiaRequests extends Middleware
     }
 
     // --- توابع کمکی با امضای صحیح ---
+    protected function getAuthUser(): ?array
+    {
+        $user = Auth::user();
+        if (!$user) return null;
+
+        return [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'avatar' => 'https://ui-avatars.com/api/?name=' . urlencode($user->name) . '&background=random&color=fff',
+        ];
+    }
 
     protected function getSidebarMenu(Request $request): array
     {
@@ -180,12 +195,13 @@ class HandleInertiaRequests extends Middleware
      * @param int $limit
      * @return \Illuminate\Support\Collection
      */
-    protected function getNotificationsData(Request $request, int $limit = 5)
+    protected function getNotificationsData(int $limit = 5)
     {
-        $user = $request->user();
-        if (!$user) return collect();
+        $user = Auth::user();
+        if (!$user) {
+            return collect();
+        }
         
-        // **استفاده از پراپرتی به جای متد**
         return $user->unreadNotifications->take($limit)->map(function ($notification) {
             return [
                 'id' => $notification->id,
