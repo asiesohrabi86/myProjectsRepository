@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react'; // useEffect و axios دیگر اینجا لازم نیستند
+import React from 'react';
 import { Link, usePage } from '@inertiajs/react';
-import axios from 'axios'; // axios برای markAsRead لازم است
+import axios from 'axios';
 
 function toggleFullScreen() {
     if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.msFullscreenElement) {
@@ -17,34 +17,24 @@ function toggleFullScreen() {
     }
 }
 
-
-// **پراپ‌های notifications و conversations را دریافت می‌کند**
-const Header = ({ onDesktopMenuToggle, onMobileMenuToggle, notifications, conversations }) => {
+// پراپ setNotifications را هم برای آپدیت خوش‌بینانه دریافت می‌کند
+const Header = ({ onDesktopMenuToggle, onMobileMenuToggle, notifications, setNotifications, conversations }) => {
     const { auth } = usePage().props;
     const user = auth?.user;
 
-    // **از پراپ‌های دریافتی استفاده می‌کند**
-    const unreadMessagesCount = conversations.reduce((sum, convo) => sum + (convo.unread_count || 0), 0);
-    const unreadNotificationsCount = notifications.length;
-
-    // **state محلی برای مدیریت آپدیت خوش‌بینانه**
-    const [currentNotifications, setCurrentNotifications] = useState(notifications);
-
-    useEffect(() => {
-        setCurrentNotifications(notifications);
-    }, [notifications]); // با هر تغییر در پراپ، state محلی را آپدیت کن
-
+    const unreadMessagesCount = (conversations || []).reduce((sum, convo) => sum + (convo.unread_count || 0), 0);
+    
     const handleNotificationsClick = () => {
-        if (unreadNotificationsCount > 0) {
+        if (notifications.length > 0) {
             axios.post(route('dashboard.notifications.markAsRead'));
-            // فقط state محلی را برای آپدیت خوش‌بینانه تغییر می‌دهیم
-            setCurrentNotifications([]);
+            // آپدیت خوش‌بینانه: state را در والد تغییر می‌دهد
+            setNotifications([]);
         }
     };
 
     return (
         <header className="top-header-area d-flex align-items-center justify-content-between">
-            {/* این بخش کاملاً دست‌نخورده باقی می‌ماند */}
+           
             <div className="left-side-content-area d-flex align-items-center">
                 <div className="mobile-logo mr-3 mr-sm-4">
                     <a href="/dashboard"><img src="/admin/img/core-img/small-logo.png" alt="آرم موبایل" /></a>
@@ -59,7 +49,6 @@ const Header = ({ onDesktopMenuToggle, onMobileMenuToggle, notifications, conver
                     </li>
                 </ul>
             </div>
-
             <div className="right-side-navbar d-flex align-items-center justify-content-end">
                 <ul className="right-side-content d-flex align-items-center">
                     <li className="full-screen-mode ml-1">
@@ -67,7 +56,7 @@ const Header = ({ onDesktopMenuToggle, onMobileMenuToggle, notifications, conver
                     </li>
                     {/* زبان (بدون تغییر) */}
                     <li className="nav-item dropdown"> ... </li>
-
+                    
                     {/* **شروع بخش داینامیک پیام‌ها** */}
                     <li className="nav-item dropdown">
                         <button type="button" className="btn dropdown-toggle" data-toggle="dropdown"><i className="zmdi zmdi-shopping-basket"></i>
@@ -94,28 +83,27 @@ const Header = ({ onDesktopMenuToggle, onMobileMenuToggle, notifications, conver
                         </div>
                     </li>
 
-                    {/* منوی اطلاعیه‌ها */}
+                    {/* بخش اطلاعیه‌ها */}
                     <li className="nav-item dropdown">
                         <button type="button" className="btn dropdown-toggle" data-toggle="dropdown" onClick={handleNotificationsClick}>
                             <i className="zmdi zmdi-notifications-active"></i>
-                            {/* **از state محلی استفاده می‌کند** */}
-                            {currentNotifications.length > 0 && <span className="active-status"></span>}
+                            {notifications.length > 0 && <span className="active-status"></span>}
                         </button>
                         <div className="dropdown-menu dropdown-menu-right">
                             <div className="top-notifications-area">
                                 <div className="notifications-heading"><h6>اطلاعیه</h6></div>
                                 <div className="notifications-box" style={{maxHeight: 255, overflowY: 'auto'}}>
-                                    {/* **از state محلی استفاده می‌کند** */}
-                                    {currentNotifications.length > 0 ? currentNotifications.map(notif => (
-                                        <a href={notif.url} className="dropdown-item" key={`notif-${notif.id}`}>
+                                    {notifications.length > 0 ? notifications.map(notif => (
+                                        <Link href={notif.url} className="dropdown-item" key={notif.id}>
                                             <i className={`fa ${notif.icon}`}></i>
                                             <span>{notif.text} <small className="text-muted d-block">{notif.time}</small></span>
-                                        </a>
+                                        </Link>
                                     )) : <p className="text-center p-3 text-muted">اطلاعیه جدیدی وجود ندارد.</p>}
                                 </div>
                             </div>
                         </div>
                     </li>
+                    
                     {/* **شروع بخش داینامیک کاربر** */}
                     <li className="nav-item dropdown">
                         <button type="button" className="btn dropdown-toggle" data-toggle="dropdown">
@@ -147,6 +135,156 @@ const Header = ({ onDesktopMenuToggle, onMobileMenuToggle, notifications, conver
 };
 
 export default Header;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import React, { useState, useEffect } from 'react'; // useEffect و axios دیگر اینجا لازم نیستند
+// import { Link, usePage } from '@inertiajs/react';
+// import axios from 'axios'; // axios برای markAsRead لازم است
+
+
+
+
+// // **پراپ‌های notifications و conversations را دریافت می‌کند**
+// const Header = ({ onDesktopMenuToggle, onMobileMenuToggle, notifications, conversations }) => {
+//     const { auth } = usePage().props;
+//     const user = auth?.user;
+
+//     // **از پراپ‌های دریافتی استفاده می‌کند**
+//     const unreadMessagesCount = conversations.reduce((sum, convo) => sum + (convo.unread_count || 0), 0);
+//     const unreadNotificationsCount = notifications.length;
+
+//     // **state محلی برای مدیریت آپدیت خوش‌بینانه**
+//     const [currentNotifications, setCurrentNotifications] = useState(notifications);
+
+//     useEffect(() => {
+//         setCurrentNotifications(notifications);
+//     }, [notifications]); // با هر تغییر در پراپ، state محلی را آپدیت کن
+
+//     const handleNotificationsClick = () => {
+//         if (unreadNotificationsCount > 0) {
+//             axios.post(route('dashboard.notifications.markAsRead'));
+//             // فقط state محلی را برای آپدیت خوش‌بینانه تغییر می‌دهیم
+//             setCurrentNotifications([]);
+//         }
+//     };
+
+//     return (
+//         <header className="top-header-area d-flex align-items-center justify-content-between">
+           
+//             <div className="left-side-content-area d-flex align-items-center">
+//                 <div className="mobile-logo mr-3 mr-sm-4">
+//                     <a href="/dashboard"><img src="/admin/img/core-img/small-logo.png" alt="آرم موبایل" /></a>
+//                 </div>
+//                 <div className="ecaps-triggers mr-1 mr-sm-3">
+//                     <div className="menu-collasped" onClick={onDesktopMenuToggle}><i className="zmdi zmdi-menu"></i></div>
+//                     <div className="mobile-menu-open" onClick={onMobileMenuToggle}><i className="zmdi zmdi-menu"></i></div>
+//                 </div>
+//                 <ul className="left-side-navbar d-flex align-items-center">
+//                     <li className="hide-phone app-search">
+//                         <form className="input-group" role="search"><input type="text" className="form-control" placeholder="جستجو ..." /></form>
+//                     </li>
+//                 </ul>
+//             </div>
+
+//             <div className="right-side-navbar d-flex align-items-center justify-content-end">
+//                 <ul className="right-side-content d-flex align-items-center">
+//                     <li className="full-screen-mode ml-1">
+//                         <a href="#" onClick={e => { e.preventDefault(); toggleFullScreen(); }}><i className="zmdi zmdi-fullscreen"></i></a>
+//                     </li>
+//                     {/* زبان (بدون تغییر) */}
+//                     <li className="nav-item dropdown"> ... </li>
+
+//                     {/* **شروع بخش داینامیک پیام‌ها** */}
+//                     <li className="nav-item dropdown">
+//                         <button type="button" className="btn dropdown-toggle" data-toggle="dropdown"><i className="zmdi zmdi-shopping-basket"></i>
+//                             {unreadMessagesCount > 0 && <span className="active-status"></span>}
+//                         </button>
+//                         <div className="dropdown-menu dropdown-menu-right">
+//                             <div className="top-message-area">
+//                                 <div className="top-message-heading">
+//                                     <div className="heading-title"><h6>پیام ها</h6></div>
+//                                     <span>{unreadMessagesCount} جدید</span>
+//                                 </div>
+//                                 <div className="message-box" style={{maxHeight: 255, overflowY: 'auto'}}>
+//                                     {unreadMessagesCount > 0 ? conversations.map(convo => (
+//                                         <a href="#" className="dropdown-item" key={`convo-${convo.user.id}`}>
+//                                             <img src={convo.user.avatar} alt={convo.user.name} />
+//                                             <span className="message-text">
+//                                                 <span>{convo.user.name}</span>
+//                                                 <span>{convo.last_message}</span>
+//                                             </span>
+//                                         </a>
+//                                     )) : <p className="text-center p-3 text-muted">پیام جدیدی وجود ندارد.</p>}
+//                                 </div>
+//                             </div>
+//                         </div>
+//                     </li>
+
+//                     {/* منوی اطلاعیه‌ها */}
+//                     <li className="nav-item dropdown">
+//                         <button type="button" className="btn dropdown-toggle" data-toggle="dropdown" onClick={handleNotificationsClick}>
+//                             <i className="zmdi zmdi-notifications-active"></i>
+//                             {/* **از state محلی استفاده می‌کند** */}
+//                             {currentNotifications.length > 0 && <span className="active-status"></span>}
+//                         </button>
+//                         <div className="dropdown-menu dropdown-menu-right">
+//                             <div className="top-notifications-area">
+//                                 <div className="notifications-heading"><h6>اطلاعیه</h6></div>
+//                                 <div className="notifications-box" style={{maxHeight: 255, overflowY: 'auto'}}>
+//                                     {/* **از state محلی استفاده می‌کند** */}
+//                                     {currentNotifications.length > 0 ? currentNotifications.map(notif => (
+//                                         <a href={notif.url} className="dropdown-item" key={`notif-${notif.id}`}>
+//                                             <i className={`fa ${notif.icon}`}></i>
+//                                             <span>{notif.text} <small className="text-muted d-block">{notif.time}</small></span>
+//                                         </a>
+//                                     )) : <p className="text-center p-3 text-muted">اطلاعیه جدیدی وجود ندارد.</p>}
+//                                 </div>
+//                             </div>
+//                         </div>
+//                     </li>
+//                     {/* **شروع بخش داینامیک کاربر** */}
+//                     <li className="nav-item dropdown">
+//                         <button type="button" className="btn dropdown-toggle" data-toggle="dropdown">
+//                             {user && <img src={user.avatar} alt={user.name} />}
+//                         </button>
+//                         <div className="dropdown-menu dropdown-menu-right">
+//                             <div className="user-profile-area">
+//                                 <div className="user-profile-heading">
+//                                     <div className="profile-img">
+//                                         {user && <img className="chat-img mr-2" src={user.avatar} alt={user.name} />}
+//                                     </div>
+//                                     <div className="profile-text">
+//                                         <h6>{user?.name}</h6>
+//                                         <span>{user?.email}</span>
+//                                     </div>
+//                                 </div>
+//                                 <Link href={route('profile')} className="dropdown-item"><i className="zmdi zmdi-account profile-icon bg-primary"></i> پروفایل من</Link>
+//                                 <Link href="#" className="dropdown-item"><i className="zmdi zmdi-email-open profile-icon bg-success"></i> پیام ها</Link>
+//                                 <Link href={route('logout')} method="post" as="button" className="dropdown-item">
+//                                     <i className="ti-unlink profile-icon bg-warning"></i> خروج از سیستم
+//                                 </Link>
+//                             </div>
+//                         </div>
+//                     </li>
+//                 </ul>
+//             </div>
+//         </header>
+//     );
+// };
+
+// export default Header;
 
 
 

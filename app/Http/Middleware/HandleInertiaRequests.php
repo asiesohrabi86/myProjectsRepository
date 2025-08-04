@@ -6,33 +6,17 @@ use Illuminate\Http\Request;
 use Inertia\Middleware;
 use Illuminate\Support\Facades\Auth;
 use Tightenco\Ziggy\Ziggy;
-// ایمپورت مدل‌های لازم
 use App\Models\ChatMessage;
-use App\Models\User;
-use Spatie\Activitylog\Models\Activity;
 
 class HandleInertiaRequests extends Middleware
 {
-    /**
-     * The root template that is loaded on the first page visit.
-     *
-     * @var string
-     */
     protected $rootView = 'inertia';
 
-    /**
-     * Determine the current asset version.
-     */
     public function version(Request $request): ?string
     {
         return parent::version($request);
     }
 
-    /**
-     * Define the props that are shared by default.
-     *
-     * @return array<string, mixed>
-     */
     public function share(Request $request): array
     {
         return array_merge(parent::share($request), [
@@ -48,21 +32,24 @@ class HandleInertiaRequests extends Middleware
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),
             ],
-            // تمام داده‌های لازم به صورت lazy-loaded به اشتراک گذاشته می‌شوند
-            'sidebarMenu' => fn() => $this->getSidebarMenu(),
-            'headerNotifications' => fn() => $this->getNotificationsData(5),
-            'headerConversations' => fn() => $this->getUnreadConversations(),
-            // **اطمینان از وجود پراپ‌ها حتی در اولین لود**
+            // **اصلاحیه اصلی: پاس دادن request به توابع**
+            'sidebarMenu' => fn() => $this->getSidebarMenu($request),
+            'notifications' => fn() => $this->getNotificationsData($request, 5),
+            'conversations' => fn() => $this->getUnreadConversations($request),
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
+                'newlySentMessage' => fn () => $request->session()->get('newlySentMessage'),
             ],
         ]);
     }
 
-    // --- توابع کمکی برای تمیز نگه داشتن کد ---
+    // --- توابع کمکی با امضای صحیح ---
 
-    protected function getSidebarMenu(): array
+    protected function getSidebarMenu(Request $request): array
     {
+        $user = $request->user();
+        if (!$user) return [];
+
         $sidebarMenu = [
             [
                 'title' => 'داشبورد',
@@ -151,20 +138,13 @@ class HandleInertiaRequests extends Middleware
             ],
         ];
 
-        if (!Auth::check()) {
-            return [];
-        }
-
-        return collect($sidebarMenu)->filter(function ($item) {
-            return empty($item['permission']) || Auth::user()->can($item['permission']);
-        })->values()->all();
+        return collect($sidebarMenu)->filter(fn($item) => empty($item['permission']) || $user->can($item['permission']))->values()->all();
     }
 
-    protected function getUnreadConversations(): \Illuminate\Support\Collection
+    protected function getUnreadConversations(Request $request): \Illuminate\Support\Collection
     {
-        if (!Auth::check()) {
-            return collect();
-        }
+        $user = $request->user();
+        if (!$user) return collect();
         
         $adminUserId = Auth::id();
 
@@ -195,12 +175,18 @@ class HandleInertiaRequests extends Middleware
         })->filter()->values();
     }
 
-    protected function getNotificationsData($limit = 5)
+    /**
+     * @param Request $request
+     * @param int $limit
+     * @return \Illuminate\Support\Collection
+     */
+    protected function getNotificationsData(Request $request, int $limit = 5)
     {
-        if (!Auth::check()) return collect();
+        $user = $request->user();
+        if (!$user) return collect();
         
-        // **استفاده از سیستم نوتیفیکیشن لاراول**
-        return Auth::user()->unreadNotifications()->limit($limit)->get()->map(function ($notification) {
+        // **استفاده از پراپرتی به جای متد**
+        return $user->unreadNotifications->take($limit)->map(function ($notification) {
             return [
                 'id' => $notification->id,
                 'text' => $notification->data['text'] ?? 'اطلاعیه جدید',
