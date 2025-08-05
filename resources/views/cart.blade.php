@@ -5,12 +5,14 @@
         <div class="container">
             @if ($errors->has('payment'))
                 <div class="alert alert-danger alert-dismissible fade show text-center my-3" role="alert">
-                    <strong>خطا در فرآیند پرداخت:</strong>
-                    <p class="mb-0">{{ $errors->first('payment') }}</p>
-                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                        <span aria-hidden="true">×</span>
-                    </button>
-                </div>
+                <strong>خطا در فرآیند پرداخت:</strong>
+                <p class="mb-0">{{ $errors->first('payment') }}</p>
+                
+                {{-- ۲. افزودن دکمه close --}}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">×</span>
+                </button>
+            </div>
             @endif
             <div class="row">
                 <div class="cart-page-content col-xl-9 col-lg-8 col-md-12 order-1">
@@ -132,7 +134,6 @@
                                             {{-- **شرطی کردن نمایش دکمه پرداخت** --}}
                                             
                                             @if (isset($basket) && count($carts) > 0)
-                                            {{-- **شروع اصلاحیه ۲: اصلاح دکمه پرداخت** --}}
                                                 @if($isStockAvailable)
                                                     <a href="{{ route('payment.product', $basket->id) }}" class="selenium-next-step-shipping">
                                                         <button class="dk-btn dk-btn-info w-100">پرداخت سفارش</button>

@@ -7,6 +7,7 @@
                 foreach($carts as $cart) {
                     $total += $cart->price * ($cart->quantity ?? 1);
                 }
+                $isStockAvailable = true; // یک پرچم برای بررسی موجودی
             @endphp
             {{ number_format($total) }}
         </span>
@@ -25,6 +26,11 @@
             @php
                 $product = \App\Models\Product::find($cart->product_id);
                 $color = $cart->color_id ? DB::table('product_colors')->where('id', $cart->color_id)->first() : null;
+                // **بررسی موجودی برای هر آیتم**
+                $hasEnoughStock = $product->amount >= $cart->quantity;
+                if (!$hasEnoughStock) {
+                    $isStockAvailable = false; // اگر حتی یک محصول موجودی نداشت، پرچم را false کن
+                }
             @endphp
             <li data-id="{{ $cart->id }}">
                 <div class="basket-item">
@@ -59,6 +65,16 @@
         $basket = DB::table('baskets')->where('user_id',auth()->user()->id)->where('isActive',1)->first();
     @endphp
     @if($basket)
-        <a href="{{route('payment.product',$basket->id)}}" class="basket-submit">پرداخت سفارش</a>
+        {{-- **شرطی کردن نمایش دکمه پرداخت** --}}                                     
+        @if (isset($basket) && count($carts) > 0)
+            @if($isStockAvailable)
+                <a href="{{ route('payment.product', $basket->id) }}" class="selenium-next-step-shipping">
+                    <button class="dk-btn dk-btn-info w-100 basket-submit">پرداخت سفارش</button>
+                </a>
+            @else
+                <button class="dk-btn dk-btn-info w-100 basket-submit" disabled>پرداخت سفارش</button>
+                <p class="text-danger text-right p-2 mt-2" style="font-size:12px;">برای ادامه، لطفاً موجودی سبد خرید خود را اصلاح کنید.</p>
+            @endif
+        @endif
     @endif
 @endif 
