@@ -3,6 +3,15 @@
     <!-- main -->
     <main class="cart-page default">
         <div class="container">
+            @if ($errors->has('payment'))
+                <div class="alert alert-danger alert-dismissible fade show text-center my-3" role="alert">
+                    <strong>خطا در فرآیند پرداخت:</strong>
+                    <p class="mb-0">{{ $errors->first('payment') }}</p>
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                </div>
+            @endif
             <div class="row">
                 <div class="cart-page-content col-xl-9 col-lg-8 col-md-12 order-1">
                     <div class="cart-page-title">
@@ -14,6 +23,7 @@
                                 @php
                                     $total = 0;
                                     $payable = 0;
+                                    $isStockAvailable = true; // یک پرچم برای بررسی موجودی
                                 @endphp
                                 @if(count($carts) === 0)
                                     <tr><td colspan="5" style="text-align:center; color:#888; padding:40px 0;">سبد خرید شما خالی است</td></tr>
@@ -29,6 +39,13 @@
                                             $basket = App\Models\Basket::where('id',$cart->basket_id)->where('isActive',1)->first();
                                         @endphp
                                         @if(isset($basket))
+                                        @php
+                                            // **بررسی موجودی برای هر آیتم**
+                                            $hasEnoughStock = $cart->product->amount >= $cart->quantity;
+                                            if (!$hasEnoughStock) {
+                                                $isStockAvailable = false; // اگر حتی یک محصول موجودی نداشت، پرچم را false کن
+                                            }
+                                        @endphp
                                         <tr class="checkout-item" data-id="{{ $cart->id }}">
                                             @php
                                                 $product = DB::table('products')->where('id',$cart->product_id)->first();    
@@ -42,9 +59,14 @@
                                                 </form>
                                             </td>
                                             <td>
-                                                <h3 class="checkout-title">
-                                                    {{$product->title}}
-                                                </h3>
+                                                <h3 class="checkout-title">{{ $product->title }}</h3>
+                                                {{-- **نمایش هشدار در صورت عدم وجود موجودی کافی** --}}
+                                                @if (!$hasEnoughStock)
+                                                    <div class="alert alert-warning mt-2 p-2" style="font-size: 12px;">
+                                                        موجودی فعلی این محصول <strong>{{ $product->amount }}</strong> عدد است. لطفاً تعداد را اصلاح یا محصول را حذف کنید.
+                                                    </div>
+                                                @endif
+                                               
                                                 @if($cart->color_id)
                                                     @php $color = DB::table('product_colors')->where('id', $cart->color_id)->first(); @endphp
                                                     <div>رنگ: <span style="display:inline-block;width:16px;height:16px;background:{{$color->color}};border-radius:50%;vertical-align:middle;"></span> {{$color->color_name ?? ''}}</div>
@@ -107,15 +129,19 @@
                                         $basket = DB::table('baskets')->where('user_id',auth()->user()->id)->where('isActive',1)->first();
                                     @endphp
                                         @if (isset($basket))
-
-                                            <a href="{{route('payment.product',$basket->id)}}" class="selenium-next-step-shipping">
-                                                <div class="parent-btn">
-                                                    <button class="dk-btn dk-btn-info">
-                                                        پرداخت سفارش
-                                                        <i class="now-ui-icons shopping_basket"></i>
-                                                    </button>
-                                                </div>
-                                            </a>
+                                            {{-- **شرطی کردن نمایش دکمه پرداخت** --}}
+                                            
+                                            @if (isset($basket) && count($carts) > 0)
+                                            {{-- **شروع اصلاحیه ۲: اصلاح دکمه پرداخت** --}}
+                                                @if($isStockAvailable)
+                                                    <a href="{{ route('payment.product', $basket->id) }}" class="selenium-next-step-shipping">
+                                                        <button class="dk-btn dk-btn-info w-100">پرداخت سفارش</button>
+                                                    </a>
+                                                @else
+                                                    <button class="dk-btn dk-btn-info w-100" disabled>پرداخت سفارش</button>
+                                                    <p class="text-danger mt-2" style="font-size:12px;">برای ادامه، لطفاً موجودی سبد خرید خود را اصلاح کنید.</p>
+                                                @endif
+                                            @endif
                                         @endif
                                       
                                     <div>

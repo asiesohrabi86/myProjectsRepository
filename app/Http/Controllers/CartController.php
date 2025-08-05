@@ -45,6 +45,34 @@ class CartController extends Controller
     public function store(Request $request)
     {
         $product = Product::findOrFail($request->product_id);
+        $requestedQuantity = $request->quantity ?? 1;
+
+        // ** بررسی جامع موجودی**
+        
+        // ۱. تعداد این محصول که از قبل در سبد خرید کاربر است را پیدا کن
+        $quantityInCart = Cart::where('user_id', auth()->id())
+                              ->where('product_id', $product->id)
+                              ->sum('quantity');
+        
+        // ۲. مجموع تعداد درخواستی و تعداد موجود در سبد را محاسبه کن
+        $totalQuantityNeeded = $quantityInCart + $requestedQuantity;
+
+        // ۳. با موجودی انبار مقایسه کن
+        if ($totalQuantityNeeded > $product->amount) {
+            $availableToAdd = $product->amount - $quantityInCart;
+            $message = $availableToAdd > 0
+                ? "شما فقط می‌توانید {$availableToAdd} عدد دیگر از این محصول را به سبد خرید اضافه کنید."
+                : "موجودی این محصول به اتمام رسیده یا تعداد در سبد خرید شما به حداکثر رسیده است.";
+            
+            // برای درخواست‌های AJAX، یک پاسخ خطای JSON برمی‌گردانیم
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $message], 422); // 422 Unprocessable Entity
+            }
+
+            // برای درخواست‌های عادی، با یک پیام خطا به عقب برمی‌گردیم
+            return back()->withErrors(['quantity' => $message]);
+        }
+        
         $isCart = DB::table('carts')->where('user_id',auth()->user()->id)->first(); 
         $basket = DB::table('baskets')->where('user_id',auth()->user()->id)->where('isActive',1)->first();
         $finalPrice = $request->final_price;

@@ -50,10 +50,10 @@ const MenuItem = ({ item, openMenu, setOpenMenu }) => {
     // اگر آیتم تکی بود
     return (
         <li className={isActive(item.active) ? 'active' : ''}>
-            <Link href={item.url}>
+            <a href={item.url}>
                 {item.icon && <i className={item.icon}></i>}
                 <span>{item.title}</span>
-            </Link>
+            </a>
         </li>
     );
 };

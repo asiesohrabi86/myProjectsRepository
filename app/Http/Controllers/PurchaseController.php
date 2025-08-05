@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Basket;
 use App\Models\Order;
 use App\Models\User;
+use App\Models\Product;
 use App\Models\OrderItem;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
@@ -17,12 +18,19 @@ use Shetabit\Multipay\Exceptions\InvalidPaymentException;
 use SoapFault;
 use App\Notifications\GeneralNotification;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\DB;
 
 class PurchaseController extends Controller
 {
     public function purchase(Basket $basket)
     {
-        $user = Auth::user();
+        
+        $user = auth()->user();
+        
+        // اطمینان از اینکه سبد خرید متعلق به کاربر است و فعال است
+        if ($basket->user_id !== $user->id || !$basket->isActive) {
+            abort(403);
+        }
         // سبد خرید پرداخت شده در جدول سفارشات قرار می گیرد،پس اگر در جدول سفارشات باشد یعنی پرداخت شده و باید ارور بدهد
         $orderExist = Order::where('user_id',Auth::id())->where('basket_id',$basket->id)->first();
         if($orderExist)
@@ -30,46 +38,71 @@ class PurchaseController extends Controller
             return "این سبد قبلا پرداخت شده است";
         }
 
+        // ۱. ابتدا نیاز کل به هر محصول را در سبد خرید محاسبه و تجمیع می‌کنیم.
+        $productQuantitiesNeeded = $basket->carts()
+            ->select('product_id', DB::raw('SUM(quantity) as total_quantity'))
+            ->groupBy('product_id')
+            ->get()
+            ->pluck('total_quantity', 'product_id'); // نتیجه: [product_id => total_quantity]
+
+        // اگر سبد خالی بود، اجازه ادامه نده
+        if ($productQuantitiesNeeded->isEmpty()) {
+            return redirect()->route('cart.index')->withErrors(['payment' => 'سبد خرید شما خالی است.']);
+        }
+
+
         try{
-            $invoice = new Invoice();
-            $invoice->amount($basket->price);
-            $invoice->detail('موبایل کاربر:',$user->phone_number);
-            $paymentId = md5(uniqid());
+             // **شروع تراکنش دیتابیس**
+            return DB::transaction(function () use ($basket, $user, $productQuantitiesNeeded) {
+                
+                // ۱. چک کردن مجدد موجودی تمام محصولات با قفل‌گذاری
+                foreach ($productQuantitiesNeeded as $productId => $neededQuantity) {
+                    $product = Product::lockForUpdate()->find($productId);
 
-            $transaction = Transaction::create([
-                'user_id' => $user->id,
-                'basket_id' => $basket->id,
-                'paid' => $invoice->getAmount(),
-                'invoice_details' => $invoice,
-                'payment_id' => $paymentId,
-               
-            ]);
+                    if ($product->amount < $neededQuantity) {
+                        // اگر موجودی کافی نبود، تراکنش را rollBack کن و خطا بده
+                        throw new \Exception("متاسفانه موجودی محصول \"{$product->title}\" کافی نیست. موجودی فعلی: {$product->amount} عدد.");
+                    }
+                }
+
+                // ۲. اگر همه محصولات موجود بودند، موجودی را کم کن
+                foreach ($productQuantitiesNeeded as $productId => $neededQuantity) {
+                    Product::find($productId)->decrement('amount', $neededQuantity);
+                }
+                // 3-
+                $invoice = new Invoice();
+                $invoice->amount($basket->price);
+                $invoice->detail('موبایل کاربر:',$user->phone_number);
+                $paymentId = md5(uniqid());
+
+                $transaction = Transaction::create([
+                    'user_id' => $user->id,
+                    'basket_id' => $basket->id,
+                    'paid' => $invoice->getAmount(),
+                    'invoice_details' => $invoice,
+                    'payment_id' => $paymentId,
+                
+                ]);
             
-            $callbackUrl = route('payment.product.result',[$basket->id,'payment_id'=>$paymentId]);
+                $callbackUrl = route('payment.product.result',[$basket->id,'payment_id'=>$paymentId]);
 
-            $payment = Payment::callbackUrl($callbackUrl);
-            $payment->config('description' , $user->name);
+                $payment = Payment::callbackUrl($callbackUrl);
+                $payment->config('description' , $user->name);
 
-            $payment->purchase($invoice,function($driver,$transactionId) use($transaction){
-                $transaction->transaction_id = $transactionId;
-                $transaction->save(); 
+                $payment->purchase($invoice,function($driver,$transactionId) use($transaction){
+                    $transaction->transaction_id = $transactionId;
+                    $transaction->save(); 
+                });
+
+                return $payment->pay()->render();
             });
 
-            return $payment->pay()->render();
-
-            }catch(Exception|PurchaseFailedException|SoapFault $e){
-                // برای دیباگ، پیام خطا را نمایش بده
-                return $e->getMessage() . ' | ' . $e->getCode();
-                // کد قبلی:
-                // $transaction = $basket->transactions()->first();
-                // $transaction->transaction_result = [
-                //     'message' => $e->getMessage(),
-                //     'code' => $e->getCode(),
-                // ];
-                // $transaction->status = Transaction::STATUS_FAILED;
-                // $transaction->save();
-                // return "خطایی در پرداخت به وجود آمد";
-            }
+        }catch(Exception|PurchaseFailedException|SoapFault $e){
+            // اگر در هر مرحله از تراکنش خطایی رخ دهد (چه موجودی و چه پرداخت)
+            // به کاربر یک پیام واضح نمایش می‌دهیم.
+            return redirect()->route('cart.index')->withErrors(['payment' => $e->getMessage()]);
+        }
+            
     }
 
     public function result(Request $request, $id)

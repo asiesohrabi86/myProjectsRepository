@@ -160,7 +160,7 @@
                                     <div class="parent-btn">
                                         <div class="form-group" style="display:inline-block; margin-left:10px;">
                                             <label for="quantity">تعداد</label>
-                                            <input type="number" name="quantity" class="form-control" value="1" min="1" style="width:80px; display:inline-block;">
+                                            <input type="number" name="quantity" id="quantity-input" class="form-control" value="1" min="1" data-stock="{{ $product->amount }}"  style="width:80px; display:inline-block;">
                                         </div>
                                         <button type="submit" class="dk-btn dk-btn-info" style="vertical-align:middle;">
                                             <i class="now-ui-icons shopping_cart-simple" style="margin-left:5px;"></i>
@@ -567,6 +567,30 @@
             if(addToCartForm) {
                 addToCartForm.addEventListener('submit', function(e) {
                     e.preventDefault();
+                    var quantityInput = document.getElementById('quantity-input');
+                    var selectedQuantity = parseInt(quantityInput.value, 10);
+                    var availableStock = parseInt(quantityInput.getAttribute('data-stock'), 10);
+
+                    // ۱. چک کردن موجودی
+                    if (availableStock == 0) {
+                        // اگر تعداد انتخابی بیشتر از موجودی بود
+                        swal('خطا', 'موجودی کالا به اتمام رسیده', 'error');
+                        return; // اجرای تابع را متوقف کن و فرم را ارسال نکن
+                    }
+                    if (selectedQuantity > availableStock) {
+                        // اگر تعداد انتخابی بیشتر از موجودی بود
+                        swal('خطا', `حداکثر تعداد قابل سفارش ${availableStock} عدد است.`, 'error');
+                        return; // اجرای تابع را متوقف کن و فرم را ارسال نکن
+                    }
+                    // نمایش لودینگ در SweetAlert
+                    swal({
+                        title: 'لطفا صبر کنید...',
+                        text: 'در حال افزودن محصول به سبد خرید',
+                        icon: 'info',
+                        buttons: false,
+                        closeOnClickOutside: false,
+                        closeOnEsc: false,
+                    });
                     var formData = new FormData(addToCartForm);
                     axios.post(addToCartForm.action, formData)
                         .then(function(response) {
@@ -580,7 +604,20 @@
                             });
                         })
                         .catch(function(error) {
-                            swal('خطا', 'خطا در افزودن محصول به سبد خرید', 'error');
+                            // ۱. یک پیام پیش‌فرض تعریف می‌کنیم
+                            let errorMessage = 'خطایی رخ داد. لطفاً دوباره تلاش کنید.';
+
+                            // ۲. بررسی می‌کنیم که آیا پاسخ خطا از سرور وجود دارد و ساختار مورد انتظار ما را دارد یا نه
+                            if (error.response && error.response.data && error.response.data.message) {
+                                // اگر سرور یک پیام خطای مشخص (مانند خطای موجودی) فرستاده بود، از آن استفاده می‌کنோம்
+                                errorMessage = error.response.data.message;
+                            } else if (error.request) {
+                                // اگر درخواست ارسال شده اما پاسخی دریافت نشده (مشکل شبکه)
+                                errorMessage = 'ارتباط با سرور برقرار نشد.';
+                            }
+
+                            // ۳. پیام نهایی را با SweetAlert نمایش می‌دهیم
+                            swal('خطا', errorMessage, 'error');
                         });
                 });
             }
