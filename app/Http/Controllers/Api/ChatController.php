@@ -58,15 +58,29 @@ class ChatController extends Controller
         $validated = $request->validate(['message' => 'required|string|max:1000']);
         
         $user = $request->user();
-        $admin = User::where('is_admin', true)->first();
+        $admins = User::where('is_admin', true)->get();
 
-        $message = ChatMessage::create([
-            'user_id' => $user->id,
-            'message' => $validated['message'],
-            'recipient_id' => $admin ? $admin->id : null,
-        ]);
+        if ($admins->isEmpty()) {
+            return response()->json(['status' => 'error', 'message' => 'No admin found'], 404);
+        }
+
+        $messageText = $validated['message'];
+        $sentMessage = null;
+
+        // **به ازای هر ادمین، یک پیام جداگانه ایجاد می‌کنیم**
+        foreach($admins as $admin) {
+            $message = ChatMessage::create([
+                'user_id' => $user->id,
+                'message' => $messageText,
+                'recipient_id' => $admin->id, // گیرنده، هر ادمین است
+            ]);
+            if (!$sentMessage) $sentMessage = $message;
+        }
         
-        broadcast(new MessageSentToAdmin($message));
+        // رویداد را فقط یک بار و برای اطلاع‌رسانی کلی پخش می‌کنیم
+        if ($sentMessage) {
+            broadcast(new MessageSentToAdmin($sentMessage));
+        }
 
         return response()->json(['status' => 'success', 'message' => $message], 201);
     }

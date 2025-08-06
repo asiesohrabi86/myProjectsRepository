@@ -20,14 +20,7 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         return array_merge(parent::share($request), [
-            // 'auth' => fn() => [
-            //     'user' => $request->user() ? [
-            //         'id' => $request->user()->id,
-            //         'name' => $request->user()->name,
-            //         'email' => $request->user()->email,
-            //         'avatar' => 'https://ui-avatars.com/api/?name=' . urlencode($request->user()->name) . '&background=random&color=fff',
-            //     ] : null,
-            // ],
+          
             'auth' => fn() => [
                 'user' => $this->getAuthUser(), // استفاده از تابع کمکی
             ],

@@ -67,7 +67,29 @@ class PurchaseController extends Controller
 
                 // ۲. اگر همه محصولات موجود بودند، موجودی را کم کن
                 foreach ($productQuantitiesNeeded as $productId => $neededQuantity) {
-                    Product::find($productId)->decrement('amount', $neededQuantity);
+                    $product = Product::find($productId);
+                    $product->decrement('amount', $neededQuantity);
+                    if($product->amount < 5){
+                        try {
+                            $admins = User::where('is_admin', true)->get();
+                            if ($admins->isNotEmpty()) {
+                                $productTitle = $product->title;
+                                
+                                $notificationData = [
+                                    'text' => "موجودی محصول " . $productTitle . "کمتر از 5 شده است" ,
+                                    'icon' => 'fa-coins text-warning',
+                                    'url'  => route('products.update', $product->id) 
+                                ];
+
+                                // **استفاده از حلقه برای جلوگیری از خطای Duplicate ID**
+                                foreach ($admins as $admin) {
+                                    $admin->notify(new GeneralNotification($notificationData));
+                                }
+                            }
+                        } catch (\Exception $e) {
+                            \Log::error('Failed to send new comment notification: ' . $e->getMessage());
+                        }
+                    }
                 }
                 // 3-
                 $invoice = new Invoice();
